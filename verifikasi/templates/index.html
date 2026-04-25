@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+  <head>
+    <title>REGMABA UNSRAT - Verifikasi Ijazah</title>
+
+    {% load static %}
+
+    <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3" />
+  </head>
+
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <div class="nav-content">
+        <div class="nav-left">
+          <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
+          <div class="nav-text">
+            <h2>REGMABA UNSRAT - Verifikasi Ijazah</h2>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="main-wrapper">
+      <main class="main-content">
+
+        <!-- HEADER -->
+        <div class="page-header">
+          <h1>Dashboard Verifikasi</h1>
+          <p>Unggah ijazah untuk proses verifikasi oleh admin</p>
+        </div>
+
+        <div class="content-grid">
+
+          <!-- ================= UPLOAD ================= -->
+          <div class="card upload-card">
+            <div class="card-header">
+              <h3>Unggah Berkas</h3>
+            </div>
+
+            <div class="card-body">
+
+              {% if uploaded_file_url %}
+
+              <!-- FILE SUDAH DIUPLOAD -->
+              <div class="uploaded-file-box">
+
+                <p class="uploaded-title">Dokumen berhasil diupload</p>
+
+                <div class="file-card">
+                  <div class="file-icon">
+                    {% if uploaded_file_is_image %} 🖼️
+                    {% elif uploaded_file_is_pdf %} 📄
+                    {% else %} 📁
+                    {% endif %}
+                  </div>
+
+                  <div class="file-info">
+                    <p class="file-name">{{ uploaded_file_name }}</p>
+                  </div>
+
+                  <div class="file-action">
+                    <a href="{{ uploaded_file_url }}" target="_blank" class="btn-view">
+                      Lihat Dokumen
+                    </a>
+                  </div>
+                </div>
+
+                <a class="btn btn-primary" href="?reset=1">Upload Ulang</a>
+
+              </div>
+
+              {% else %}
+
+              <!-- FORM UPLOAD -->
+              <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="file-input-wrapper">
+                  <input id="ijazah-file" type="file" name="ijazah" required class="file-input" />
+
+                  <label for="ijazah-file" class="file-input-label">
+                    <span class="file-input-icon">📄</span>
+                    <span>Klik untuk pilih file</span>
+                  </label>
+                </div>
+
+                <!-- PREVIEW -->
+                <div id="selected-file-preview" class="uploaded-file-box selected-file-preview">
+                  <p class="uploaded-title">File yang dipilih</p>
+
+                  <div class="file-card">
+                    <div class="file-icon" id="selected-icon">📄</div>
+                    <div class="file-info">
+                      <p id="selected-file-name" class="file-name"></p>
+                    </div>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                  Upload & Verifikasi
+                </button>
+              </form>
+
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- ================= RESULT ================= -->
+<div class="card-body">
+
+  {% if data %}
+
+    {% if data.status == "MENUNGGU VERIFIKASI" %}
+
+      <div class="verification-box info">
+        <h4>📄 Sedang Diproses</h4>
+        <p>Dokumen Anda sedang diverifikasi oleh admin.</p>
+      </div>
+
+    {% elif data.status == "VALID" %}
+
+      <div class="verification-box success">
+        <h4>✅ Verifikasi Berhasil</h4>
+        <p>Dokumen Anda dinyatakan VALID.</p>
+      </div>
+
+    {% elif data.status == "TIDAK MEMENUHI SYARAT" %}
+
+      <div class="verification-box error">
+        <h4>❌ Verifikasi Ditolak</h4>
+        <p>Dokumen tidak memenuhi syarat.</p>
+      </div>
+
+    {% elif data.status == "TIDAK TERDETEKSI" %}
+
+      <div class="verification-box warning">
+        <h4>⚠️ Tidak Terdeteksi</h4>
+        <p>Tahun ijazah tidak dapat dibaca.</p>
+      </div>
+
+    {% endif %}
+
+  {% else %}
+
+    <div class="verification-box default">
+      <p>Belum ada dokumen yang diupload.</p>
+    </div>
+
+  {% endif %}
+
+</div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+    <!-- JS -->
+    <script>
+      const fileInput = document.getElementById("ijazah-file");
+      const previewBox = document.getElementById("selected-file-preview");
+      const nameBox = document.getElementById("selected-file-name");
+      const iconBox = document.getElementById("selected-icon");
+
+      fileInput.addEventListener("change", function () {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        nameBox.textContent = file.name;
+        previewBox.style.display = "block";
+
+        if (file.type.startsWith("image/")) {
+          iconBox.textContent = "🖼️";
+        } else if (file.type === "application/pdf") {
+          iconBox.textContent = "📄";
+        } else {
+          iconBox.textContent = "📁";
+        }
+      });
+    </script>
+
+  </body>
+</html>

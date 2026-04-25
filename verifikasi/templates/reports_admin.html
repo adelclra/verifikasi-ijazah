@@ -1,0 +1,272 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Laporan Admin - Verifikasi Ijazah</title>
+
+    {% load static %}
+    <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=12" />
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <div class="nav-content">
+        <div class="nav-left">
+          <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
+          <div class="nav-text">
+            <h2>REGMABA UNSRAT - Verifikasi Ijazah</h2>
+          </div>
+        </div>
+        <div class="nav-right">
+          <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <h3 class="sidebar-title">Admin Panel</h3>
+
+        <a href="{% url 'dashboard_admin' %}" class="menu-item">
+          <span>📊</span> Dashboard
+        </a>
+
+        <a href="{% url 'reports_admin' %}" class="menu-item active">
+          <span>📈</span> Reports
+        </a>
+
+        <a href="{% url 'settings_admin' %}" class="menu-item">
+          <span>⚙️</span> Settings
+        </a>
+      </div>
+
+      <!-- MAIN -->
+      <div class="main">
+        <h2>Reports - Verifikasi Ijazah</h2>
+        <p class="section-subtitle">
+          Laporan dan analitik hasil verifikasi dokumen
+        </p>
+
+        <!-- STATS -->
+        <div class="stats">
+          <div class="card">
+            <p>Total Bulan Ini</p>
+            <h3>{{ total_month }}</h3>
+          </div>
+          <div class="card">
+            <p>Valid</p>
+            <h3 class="text-success">{{ valid }}</h3>
+          </div>
+          <div class="card">
+            <p>Tidak Valid</p>
+            <h3 class="text-error">{{ not_valid }}</h3>
+          </div>
+          <div class="card">
+            <p>Tidak Terdeteksi</p>
+            <h3 class="text-warning">{{ unknown_year }}</h3>
+          </div>
+          <div class="card">
+            <p>Menunggu</p>
+            <h3 class="text-info">{{ pending }}</h3>
+          </div>
+          <div class="card">
+            <p>Akurasi</p>
+            <h3>{{ accuracy }}%</h3>
+          </div>
+        </div>
+
+        <!-- CHART -->
+        <div class="section-card">
+          <div class="card-header">
+            <h3>Visualisasi Data</h3>
+          </div>
+
+          <div class="card-body">
+            <div class="chart-wrapper">
+              <div class="chart-card bar">
+                <h4>Distribusi Status</h4>
+                <canvas id="barChart"></canvas>
+              </div>
+
+              <div class="chart-card pie">
+                <h4>Persentase Verifikasi</h4>
+                <canvas id="pieChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DATA CHART -->
+        <script id="chart-data" type="application/json">
+          {
+            "valid": {{ valid|default:0 }},
+            "not_valid": {{ not_valid|default:0 }},
+            "pending": {{ pending|default:0 }}
+          }
+        </script>
+
+        <!-- TABLE -->
+        <div class="section-card">
+          <div class="card-header">
+            <h3>Rincian Verifikasi</h3>
+          </div>
+
+          <!-- SEARCH + FILTER -->
+          <form method="get" class="table-controls">
+            <input
+              type="text"
+              name="search"
+              placeholder="Cari..."
+              value="{{ search }}"
+            />
+
+            <select name="status">
+              <option value="">Semua Status</option>
+              <option
+                value="VALID"
+                {%
+                if
+                status=""
+                ="VALID"
+                %}selected{%
+                endif
+                %}
+              >
+                Valid
+              </option>
+              <option
+                value="MENUNGGU"
+                {%
+                if
+                status=""
+                ="MENUNGGU"
+                %}selected{%
+                endif
+                %}
+              >
+                Menunggu
+              </option>
+              <option
+                value="TIDAK MEMENUHI SYARAT"
+                {%
+                if
+                status=""
+                ="TIDAK MEMENUHI SYARAT"
+                %}selected{%
+                endif
+                %}
+              >
+                Tidak Valid
+              </option>
+              <option
+                value="TIDAK TERDETEKSI"
+                {%
+                if
+                status=""
+                ="TIDAK TERDETEKSI"
+                %}selected{%
+                endif
+                %}
+              >
+                Tidak Terdeteksi
+              </option>
+            </select>
+
+            <button type="submit" class="btn-view">🔍</button>
+          </form>
+
+          <!-- PAGINATION -->
+          <div class="pagination">
+            {% if report_rows.has_previous %}
+            <a
+              href="?page=1&search={{ search }}&status={{ status }}"
+              class="page-btn"
+              >&laquo;</a
+            >
+            <a
+              href="?page={{ report_rows.previous_page_number }}&search={{ search }}&status={{ status }}"
+              class="page-btn"
+              >Prev</a
+            >
+            {% endif %} {% for num in report_rows.paginator.page_range %} 
+            {% if num >= report_rows.number|add:'-2' and num <= report_rows.number|add:'2' %} 
+            {% if report_rows.number == num %}
+            <span class="page-btn active">{{ num }}</span>
+            {% else %}
+            <a
+              href="?page={{ num }}&search={{ search }}&status={{ status }}"
+              class="page-btn"
+              >{{ num }}</a
+            >
+            {% endif %} {% endif %} {% endfor %} {% if report_rows.has_next %}
+            <a
+              href="?page={{ report_rows.next_page_number }}&search={{ search }}&status={{ status }}"
+              class="page-btn"
+              >Next</a
+            >
+            <a
+              href="?page={{ report_rows.paginator.num_pages }}&search={{ search }}&status={{ status }}"
+              class="page-btn"
+              >&raquo;</a
+            >
+            {% endif %}
+          </div>
+
+          <!-- 🔥 EXPORT -->
+          <div class="card-body">
+            <div class="report-actions">
+              <a
+                href="{% url 'download_reports_pdf' %}?search={{ search }}&status={{ status }}"
+                class="btn-view"
+              >
+                📄 Export PDF
+              </a>
+              <a
+                href="{% url 'download_reports_excel' %}?search={{ search }}&status={{ status }}"
+                class="btn-approve"
+              >
+                📊 Export Excel
+              </a>
+            </div>
+
+            <!-- TABLE -->
+            <table>
+              <tr>
+                <th>No</th>
+                <th>Nama</th>
+                <th>Tahun</th>
+                <th>Status</th>
+              </tr>
+
+              {% for item in report_rows %}
+              <tr>
+                <td>{{ forloop.counter0|add:report_rows.start_index }}</td>
+                <td>{{ item.nama }}</td>
+                <td>{{ item.extracted_year|default:"-" }}</td>
+
+                <td>
+                  {% if item.status == "VALID" %}
+                  <span class="badge badge-success">VALID</span>
+                  {% elif item.status == "TIDAK MEMENUHI SYARAT" %}
+                  <span class="badge badge-error">TIDAK VALID</span>
+                  {% elif item.status == "MENUNGGU VERIFIKASI" %}
+                  <span class="badge badge-info">MENUNGGU</span>
+                  {% else %}
+                  <span class="badge badge-warning">TIDAK TERDETEKSI</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="{% static 'js/reports.js' %}"></script>
+  </body>
+</html>

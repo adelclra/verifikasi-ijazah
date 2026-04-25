@@ -1,0 +1,114 @@
+{% load static %}
+<!doctype html>
+<html>
+  <head>
+    <title>Lihat Dokumen - Verifikasi Ijazah</title>
+    <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=5" />
+  </head>
+
+  <body>
+    <nav class="navbar">
+      <div class="nav-content">
+        <div class="nav-left">
+          <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
+          <div class="nav-text">
+            <h2>REGMABA UNSRAT - Verifikasi Ijazah</h2>
+          </div>
+        </div>
+        <div class="nav-right">
+          <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <div class="sidebar">
+        <h3 class="sidebar-title">Admin Panel</h3>
+
+        <a href="{% url 'dashboard_admin' %}" class="menu-item">
+          <span>📊</span> Dashboard
+        </a>
+
+        <a href="{% url 'reports_admin' %}" class="menu-item">
+          <span>📈</span> Reports
+        </a>
+
+        <a href="{% url 'settings_admin' %}" class="menu-item">
+          <span>⚙️</span> Settings
+        </a>
+      </div>
+
+      <div class="main">
+        <h2>Detail Verifikasi Dokumen</h2>
+        <p class="section-subtitle">
+          Tampilan dokumen disamakan dengan halaman index
+        </p>
+
+        <div class="card section-card">
+          <div class="card-header">
+            <h3>File Dokumen</h3>
+          </div>
+          <div class="card-body">
+            {% if file_url %}
+            <div class="file-card">
+              <div class="file-icon">
+                {% if file_is_image %}🖼️ {% elif file_is_pdf %}📄 {% else %}📁
+                {% endif %}
+              </div>
+
+              <div class="file-info">
+                <p class="file-name">{{ file_name }}</p>
+                <p class="file-status">
+                  {% if file_is_pdf %}Dokumen PDF{% elif file_is_image %}Dokumen
+                  Gambar{% else %}Dokumen File{% endif %}
+                </p>
+              </div>
+
+              <div class="file-action">
+                <a href="{{ file_url }}" target="_blank" class="btn-view"
+                  >Lihat Dokumen</a
+                >
+              </div>
+            </div>
+            {% else %}
+            <p>File dokumen belum tersedia.</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="card section-card doc-info-card">
+          <div class="card-header">
+            <h3>Informasi Verifikasi</h3>
+          </div>
+          <div class="card-body">
+            <div class="form-row">
+              <label>ID</label>
+              <span class="form-value">{{ item.id }}</span>
+            </div>
+            <div class="form-row">
+              <label>Nama</label>
+              <span class="form-value">{{ item.nama }}</span>
+            </div>
+            <div class="form-row">
+              <label>Tahun Terdeteksi</label>
+              <span class="form-value"
+                >{{ item.extracted_year|default:"-" }}</span
+              >
+            </div>
+            <div class="form-row">
+              <label>Status</label>
+              <span class="form-value">{{ item.status }}</span>
+            </div>
+            <div class="form-row">
+              <label>Tanggal Unggah</label>
+              <span class="form-value"
+                >{{ item.created_at|date:"Y-m-d H:i" }}</span
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

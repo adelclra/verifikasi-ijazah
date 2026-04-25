@@ -1,0 +1,261 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <title>Dashboard Admin - Verifikasi Ijazah</title>
+
+    {% load static %}
+    <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=10" />
+  </head>
+
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <div class="nav-content">
+        <div class="nav-left">
+          <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
+          <div class="nav-text">
+            <h2>REGMABA UNSRAT - Verifikasi Ijazah</h2>
+          </div>
+        </div>
+        <div class="nav-right">
+          <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- SIDEBAR -->
+      <div class="sidebar">
+        <h3 class="sidebar-title">Admin Panel</h3>
+
+        <a href="{% url 'dashboard_admin' %}" class="menu-item active">
+          <span>📊</span> Dashboard
+        </a>
+
+        <a href="{% url 'reports_admin' %}" class="menu-item">
+          <span>📈</span> Reports
+        </a>
+
+        <a href="{% url 'settings_admin' %}" class="menu-item">
+          <span>⚙️</span> Settings
+        </a>
+      </div>
+
+      <!-- MAIN -->
+      <div class="main">
+        <!-- HERO SECTION -->
+        <div class="hero">
+          <h2>Halo, Admin 👋</h2>
+          <p>Selamat datang kembali!</p>
+        </div>
+
+        <!-- STATS -->
+        <div class="stats">
+          <div class="card">
+            <p>Total</p>
+            <h3>{{ total }}</h3>
+          </div>
+          <div class="card">
+            <p>Valid</p>
+            <h3 class="text-success">{{ valid }}</h3>
+          </div>
+          <div class="card">
+            <p>Tidak Memenuhi Syarat</p>
+            <h3 class="text-error">{{ not_valid }}</h3>
+          </div>
+          <div class="card">
+            <p>Tidak Terdeteksi</p>
+            <h3 class="text-warning">{{ unknown_year }}</h3>
+          </div>
+          <div class="card">
+            <p>Menunggu</p>
+            <h3 class="text-info">{{ pending }}</h3>
+          </div>
+          <div class="card">
+            <p>Hari Ini</p>
+            <h3>{{ today }}</h3>
+          </div>
+        </div>
+
+        <!-- FILTER + SEARCH -->
+        <form method="get" class="table-controls">
+          <input
+            type="text"
+            name="search"
+            placeholder="Cari"
+            value="{{ search }}"
+          />
+
+          <select name="status">
+            <option value="">Semua Status</option>
+            <option
+              value="VALID"
+              {%
+              if
+              status=""
+              ="VALID"
+              %}selected{%
+              endif
+              %}
+            >
+              Valid
+            </option>
+            <option
+              value="MENUNGGU"
+              {%
+              if
+              status=""
+              ="MENUNGGU"
+              %}selected{%
+              endif
+              %}
+            >
+              Menunggu
+            </option>
+            <option
+              value="TIDAK TERDETEKSI"
+              {%
+              if
+              status=""
+              ="TIDAK TERDETEKSI"
+              %}selected{%
+              endif
+              %}
+            >
+              Tidak Terdeteksi
+            </option>
+            \
+            <option
+              value="TIDAK MEMENUHI SYARAT"
+              {%
+              if
+              status=""
+              ="TIDAK MEMENUHI SYARAT"
+              %}selected{%
+              endif
+              %}
+            >
+              Tidak Memenuhi Syarat
+            </option>
+          </select>
+
+          <button type="submit" class="btn-view">🔍</button>
+        </form>
+
+        <!-- PAGINATION -->
+        <div class="pagination">
+          {% if data.has_previous %}
+          <a
+            href="?page=1&search={{ search }}&status={{ status }}"
+            class="page-btn"
+            >&laquo;</a
+          >
+          <a
+            href="?page={{ data.previous_page_number }}&search={{ search }}&status={{ status }}"
+            class="page-btn"
+            >Prev</a
+          >
+          {% endif %} {% for num in data.paginator.page_range %} 
+          {% if num >= data.number|add:'-2' and num <= data.number|add:'2' %} 
+          {% if data.number == num %}
+          <span class="page-btn active">{{ num }}</span>
+          {% else %}
+          <a
+            href="?page={{ num }}&search={{ search }}&status={{ status }}"
+            class="page-btn"
+            >{{ num }}</a
+          >
+          {% endif %} {% endif %} {% endfor %} {% if data.has_next %}
+          <a
+            href="?page={{ data.next_page_number }}&search={{ search }}&status={{ status }}"
+            class="page-btn"
+            >Next</a
+          >
+          <a
+            href="?page={{ data.paginator.num_pages }}&search={{ search }}&status={{ status }}"
+            class="page-btn"
+            >&raquo;</a
+          >
+          {% endif %}
+        </div>
+
+        <!-- TABLE -->
+        <table>
+          <tr>
+            <th>No</th>
+            <th>Nama</th>
+            <th>Tahun</th>
+            <th>Status</th>
+            <th>Tanggal</th>
+            <th>Aksi</th>
+          </tr>
+
+          {% for item in data %}
+          <tr>
+            <td>{{ forloop.counter0|add:data.start_index }}</td>
+            <td>{{ item.nama }}</td>
+            <td>{{ item.extracted_year|default:"-" }}</td>
+
+            <td>
+              {% if item.status == "VALID" %}
+              <span class="badge badge-success">VALID</span>
+              {% elif item.status == "TIDAK MEMENUHI SYARAT" %}
+              <span class="badge badge-error">TIDAK VALID</span>
+              {% elif item.status == "MENUNGGU VERIFIKASI" %}
+              <span class="badge badge-info">MENUNGGU</span>
+              {% else %}
+              <span class="badge badge-warning">TIDAK TERDETEKSI</span>
+              {% endif %}
+            </td>
+
+            <td>{{ item.created_at|date:"Y-m-d H:i" }}</td>
+
+            <td class="action-buttons">
+              <a href="{% url 'view_document' item.id %}" class="btn-view"
+                >Lihat</a
+              >
+
+              {% if item.status == "MENUNGGU VERIFIKASI" %}
+              <a
+                href="{% url 'verifikasi_valid' item.id %}"
+                class="btn-approve"
+                onclick="return confirm('Yakin ingin VALID?');"
+              >
+                Valid
+              </a>
+
+              <a
+                href="{% url 'verifikasi_tidak_sesuai' item.id %}"
+                class="btn-reject"
+                onclick="return confirm('Yakin ingin TOLAK?');"
+              >
+                Tolak
+              </a>
+
+              {% elif item.status == "VALID" %}
+              <a
+                href="{% url 'verifikasi_tidak_sesuai' item.id %}"
+                class="btn-reject"
+                onclick="return confirm('Batalkan status VALID?');"
+              >
+                Batalkan
+              </a>
+
+              {% elif item.status == "TIDAK MEMENUHI SYARAT" %}
+              <a
+                href="{% url 'verifikasi_valid' item.id %}"
+                class="btn-approve"
+                onclick="return confirm('Perbaiki menjadi VALID?');"
+              >
+                Perbaiki
+              </a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

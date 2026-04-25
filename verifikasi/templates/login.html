@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Login Admin - Verifikasi Ijazah</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/stylelogin.css' %}?v=1" />
+    <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
+  </head>
+
+  <body>
+    <main class="login-page">
+      <section class="login-card">
+        <div class="login-brand">
+          <img
+            src="{% static 'images/logo-unsrat2.png' %}"
+            alt="Logo UNSRAT"
+            class="login-logo"
+          />
+          <p class="login-kicker">REGMABA UNSRAT</p>
+          <h2>Login Admin</h2>
+          <p class="login-subtitle">Verifikasi Ijazah</p>
+        </div>
+
+        {% if error %}
+        <p class="login-error">{{ error }}</p>
+        {% endif %}
+
+        <form method="POST" class="login-form">
+          {% csrf_token %}
+
+          <label class="input-label" for="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            name="username"
+            placeholder="Masukkan username"
+            required
+            class="input-field"
+          />
+
+          <label class="input-label" for="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            placeholder="Masukkan password"
+            required
+            class="input-field"
+          />
+
+          <button type="submit" class="login-btn">Login</button>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>
