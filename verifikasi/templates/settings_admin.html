@@ -17,33 +17,32 @@
           </div>
         </div>
         <div class="nav-right">
-          <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+          <a href="{% url 'logout' %}" class="logout-btn">Keluar</a>
         </div>
       </div>
     </nav>
 
     <div class="container">
-      <!-- Sidebar -->
+      <!-- SAMPING -->
       <div class="sidebar">
-        
-        <h3 class="sidebar-title">Admin Panel</h3>
+        <h3 class="sidebar-title">Panel Admin</h3>
 
         <a href="{% url 'dashboard_admin' %}" class="menu-item">
-          <span>📊</span> Dashboard
+          <span>📊</span> Dasbor
         </a>
 
         <a href="{% url 'reports_admin' %}" class="menu-item">
-          <span>📈</span> Reports
+          <span>📈</span> Laporan
         </a>
 
         <a href="{% url 'settings_admin' %}" class="menu-item active">
-          <span>⚙️</span> Settings
+          <span>⚙️</span> Pengaturan
         </a>
       </div>
 
-      <!-- Main Content -->
+      <!-- UTAMA -->
       <div class="main">
-        <h2>Settings - Verifikasi Ijazah</h2>
+        <h2>Pengaturan - Verifikasi Ijazah</h2>
         <p class="section-subtitle">Konfigurasi dan pengaturan sistem admin</p>
 
         <div class="card section-card settings-box">

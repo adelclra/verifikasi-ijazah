@@ -1,7 +1,7 @@
 ﻿<!doctype html>
 <html>
   <head>
-    <title>Dashboard Admin - Verifikasi Ijazah</title>
+    <title>Dasbor Admin - Verifikasi Ijazah</title>
 
     {% load static %}
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
@@ -19,32 +19,32 @@
           </div>
         </div>
         <div class="nav-right">
-          <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+          <a href="{% url 'logout' %}" class="logout-btn">Keluar</a>
         </div>
       </div>
     </nav>
 
     <div class="container">
-      <!-- SIDEBAR -->
+      <!-- SAMPING -->
       <div class="sidebar">
-        <h3 class="sidebar-title">Admin Panel</h3>
+        <h3 class="sidebar-title">Panel Admin</h3>
 
         <a href="{% url 'dashboard_admin' %}" class="menu-item active">
-          <span>📊</span> Dashboard
+          <span>📊</span> Dasbor
         </a>
 
         <a href="{% url 'reports_admin' %}" class="menu-item">
-          <span>📈</span> Reports
+          <span>📈</span> Laporan
         </a>
 
         <a href="{% url 'settings_admin' %}" class="menu-item">
-          <span>⚙️</span> Settings
+          <span>⚙️</span> Pengaturan
         </a>
       </div>
 
       <!-- MAIN -->
       <div class="main">
-        <!-- HERO SECTION -->
+        <!-- BAGIAN UTAMA -->
         <div class="hero">
           <h2>Halo, Admin 👋</h2>
           <p>Selamat datang kembali!</p>
@@ -78,7 +78,7 @@
           </div>
         </div>
 
-        <!-- FILTER + SEARCH -->
+        <!-- FILTER + CARI -->
         <form method="get" class="table-controls">
           <input
             type="text"
@@ -125,7 +125,6 @@
             >
               Tidak Terdeteksi
             </option>
-            \
             <option
               value="TIDAK MEMENUHI SYARAT"
               {%
@@ -139,11 +138,10 @@
               Tidak Memenuhi Syarat
             </option>
           </select>
-
           <button type="submit" class="btn-view">🔍</button>
         </form>
 
-        <!-- PAGINATION -->
+        <!-- PAGINASI -->
         <div class="pagination">
           {% if data.has_previous %}
           <a
@@ -154,7 +152,7 @@
           <a
             href="?page={{ data.previous_page_number }}&search={{ search }}&status={{ status }}"
             class="page-btn"
-            >Prev</a
+            >Sebelumnya</a
           >
           {% endif %} {% for num in data.paginator.page_range %} 
           {% if num >= data.number|add:'-2' and num <= data.number|add:'2' %} 
@@ -170,7 +168,7 @@
           <a
             href="?page={{ data.next_page_number }}&search={{ search }}&status={{ status }}"
             class="page-btn"
-            >Next</a
+            >Berikutnya</a
           >
           <a
             href="?page={{ data.paginator.num_pages }}&search={{ search }}&status={{ status }}"
@@ -180,7 +178,7 @@
           {% endif %}
         </div>
 
-        <!-- TABLE -->
+        <!-- TABEL -->
         <table>
           <tr>
             <th>No</th>

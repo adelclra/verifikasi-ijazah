@@ -10,67 +10,128 @@ from django.core.paginator import Paginator
 from io import BytesIO
 import csv
 
-from .ocr import extract_year
+from .ocr import extract_data
 from .models import VerifikasiIjazah
+
+
+# ======================
+# BACKGROUND PROCESS 
+# ======================
+def process_file_background(obj_id, file_path, original_filename):
+    try:
+        nama_ocr, tahun, hasil_ocr = extract_data(file_path)
+
+        obj = VerifikasiIjazah.objects.get(id=obj_id)
+
+        # ======================
+        # NAMA
+        # ======================
+        if nama_ocr and nama_ocr != "Perlu Verifikasi Manual":
+            obj.nama = nama_ocr
+
+        # ======================
+        # TAHUN
+        # ======================
+        obj.extracted_year = str(tahun) if tahun else ""
+
+        # ======================
+        # STATUS
+        # ======================
+        if not tahun:
+            obj.status = "TIDAK TERDETEKSI"
+        else:
+            obj.status = "MENUNGGU VERIFIKASI"
+
+        obj.save()
+
+        print("✔ DONE:", original_filename, "|", obj.nama, "|", tahun)
+
+    except Exception as e:
+        print("ERROR:", e)
+        try:
+            obj = VerifikasiIjazah.objects.get(id=obj_id)
+            obj.status = "TIDAK TERDETEKSI"
+            obj.save()
+        except:
+            pass
 
 
 # ======================
 # UPLOAD USER
 # ======================
 def upload_ijazah(request):
-    tahun = None
     hasil_ocr = ""
-    uploaded_file_url = None
-    uploaded_file_name = None
-    uploaded_file_is_image = False
-    uploaded_file_is_pdf = False
+    uploaded_files = []
 
     last_data = VerifikasiIjazah.objects.order_by("-created_at").first()
 
     if request.method == "GET" and request.GET.get("reset") == "1":
         request.session.flush()
 
-    if request.method == "POST" and request.FILES.get("ijazah"):
-        file = request.FILES["ijazah"]
-        nama = os.path.splitext(file.name)[0]
+    # ======================
+    # MULTI UPLOAD
+    # ======================
+    if request.method == "POST" and request.FILES.getlist("ijazah"):
+        files = request.FILES.getlist("ijazah")
 
-        os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
-        file_path = os.path.join(settings.MEDIA_ROOT, file.name)
+        for file in files:
+            os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 
-        with open(file_path, "wb+") as destination:
-            for chunk in file.chunks():
-                destination.write(chunk)
+            import uuid
+            filename = f"{uuid.uuid4()}_{file.name}"
+            file_path = os.path.join(settings.MEDIA_ROOT, filename)
 
-        uploaded_file_name = file.name
-        uploaded_file_url = f"{settings.MEDIA_URL}{file.name}"
+            # simpan file dulu
+            with open(file_path, "wb+") as destination:
+                for chunk in file.chunks():
+                    destination.write(chunk)
 
-        file_lower = file.name.lower()
-        uploaded_file_is_image = file_lower.endswith((".png", ".jpg", ".jpeg"))
-        uploaded_file_is_pdf = file_lower.endswith(".pdf")
+            file_lower = file.name.lower()
+            is_image = file_lower.endswith((".png", ".jpg", ".jpeg"))
+            is_pdf = file_lower.endswith(".pdf")
 
-        tahun, hasil_ocr = extract_year(file_path)
+            # ======================
+            # SIMPAN DB DULU 
+            # ======================
+            obj = VerifikasiIjazah.objects.create(
+                nama=os.path.splitext(file.name)[0],
+                file=file,
+                extracted_year="",
+                status="MENUNGGU VERIFIKASI",
+            )
 
-        if tahun:
-            status = "MENUNGGU VERIFIKASI"
-        else:
-            status = "TIDAK TERDETEKSI"
+            # ======================
+            # OCR LANGSUNG
+            # ======================
+            nama_ocr, tahun, hasil_ocr = extract_data(file_path)
 
-        VerifikasiIjazah.objects.create(
-            nama=nama,
-            file=file,
-            extracted_year=str(tahun) if tahun else "",
-            status=status,
-        )
+            if nama_ocr and nama_ocr != "Perlu Verifikasi Manual":
+                obj.nama = nama_ocr
+
+            obj.extracted_year = str(tahun) if tahun else ""
+
+            if not tahun:
+                obj.status = "TIDAK TERDETEKSI"
+            else:
+                obj.status = "MENUNGGU VERIFIKASI"
+
+            obj.save()
+
+            uploaded_files.append({
+                "nama": obj.nama,
+                "tahun": obj.extracted_year or "-",
+                "file_url": obj.file.url if obj.file else None,
+                "is_image": is_image,
+                "is_pdf": is_pdf,
+            })
+
+            print("🚀 START PROCESS:", file.name)
 
         last_data = VerifikasiIjazah.objects.order_by("-created_at").first()
 
     return render(request, "index.html", {
         "data": last_data,
-        "ocr_text": hasil_ocr,
-        "uploaded_file_url": uploaded_file_url,
-        "uploaded_file_name": uploaded_file_name,
-        "uploaded_file_is_image": uploaded_file_is_image,
-        "uploaded_file_is_pdf": uploaded_file_is_pdf,
+        "uploaded_files": uploaded_files,
     })
 
 
@@ -111,7 +172,6 @@ def dashboard_admin(request):
         "pending": all_data.filter(status__icontains="MENUNGGU").count(),
         "unknown_year": all_data.filter(status__iexact="TIDAK TERDETEKSI").count(),
         "today": all_data.filter(created_at__date=timezone.localdate()).count(),
-
         "search": search or "",
         "status": status or "",
     })
@@ -151,7 +211,6 @@ def _build_report_data(request):
     search = request.GET.get("search")
     status = request.GET.get("status")
 
-    # FILTER
     if search:
         data = data.filter(nama__icontains=search)
 
@@ -165,12 +224,10 @@ def _build_report_data(request):
         elif status == "TIDAK TERDETEKSI":
             data = data.filter(status__iexact="TIDAK TERDETEKSI")
 
-    # PAGINATION
     paginator = Paginator(data, 10)
     page_number = request.GET.get("page")
     report_rows = paginator.get_page(page_number)
 
-    # STATS
     month_data = VerifikasiIjazah.objects.filter(
         created_at__year=today.year,
         created_at__month=today.month,
@@ -198,8 +255,6 @@ def _build_report_data(request):
         "accuracy": accuracy,
         "report_rows": report_rows,
         "akurasi_total": akurasi_total,
-
-        # 🔥 penting
         "search": search or "",
         "status": status or "",
     }
@@ -221,9 +276,6 @@ def download_reports_excel(request):
     for i, item in enumerate(rows, 1):
         writer.writerow([i, item.nama, item.extracted_year or "-", item.status])
 
-    writer.writerow([])
-    writer.writerow(["Akurasi", f"{report_data['akurasi_total']}%"])
-
     return response
 
 
@@ -234,11 +286,7 @@ def download_reports_pdf(request):
     report_data = _build_report_data(request)
     rows = report_data["report_rows"]
 
-    lines = [
-        "Laporan Verifikasi",
-        f"Akurasi: {report_data['akurasi_total']}%",
-        "",
-    ]
+    lines = ["Laporan Verifikasi", ""]
 
     for i, item in enumerate(rows, 1):
         lines.append(f"{i}. {item.nama} | {item.status}")
@@ -260,11 +308,9 @@ def _build_simple_pdf(lines):
 def view_document(request, document_id):
     item = get_object_or_404(VerifikasiIjazah, id=document_id)
 
-    file_url = item.file.url if item.file else None
-
     return render(request, "view_document.html", {
         "item": item,
-        "file_url": file_url,
+        "file_url": item.file.url if item.file else None,
     })
 
 
@@ -295,7 +341,6 @@ def logout_admin(request):
 # SETTINGS
 # ======================
 def settings_admin(request):
-
     admin_data = {
         "name": request.user.get_full_name() or request.user.username,
         "email": request.user.email,

@@ -660,7 +660,7 @@ button:hover {
 }
 
 /* ========================================
-   FILE CARD UI (NEW)
+   FILE CARD UI 
    ======================================== */
 .file-card {
   display: flex;
@@ -745,7 +745,9 @@ button:hover {
   border: 1px solid #ffeeba;
 }
 
-/* ================= VERIFICATION BOX ================= */
+/* ========================================
+   VERIFICATION STATUS BOXES
+   ======================================== */
 .verification-box {
   padding: 18px;
   border-radius: 10px;
