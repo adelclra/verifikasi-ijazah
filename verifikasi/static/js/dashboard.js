@@ -24,3 +24,16 @@ document.addEventListener("DOMContentLoaded", function () {
   searchInput.addEventListener("keyup", filterTable);
   statusFilter.addEventListener("change", filterTable);
 });
+
+function openEditModal(id, nama, tahun, status) {
+
+  document.getElementById("editModal").style.display = "flex";
+
+  document.getElementById("edit-nama").value = nama;
+
+  document.getElementById("edit-tahun").value = tahun;
+}
+
+function closeEditModal() {
+  document.getElementById("editModal").style.display = "none";
+}

@@ -20,3 +20,7 @@ class VerifikasiIjazah(models.Model):
 
     def __str__(self):
         return f"{self.nama} - {self.status}"
+    
+    hasil_benar = models.BooleanField(default=False)
+    tidak_terbaca = models.BooleanField(default=False)
+    salah_tahun = models.BooleanField(default=False)

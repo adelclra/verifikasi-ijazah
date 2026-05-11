@@ -17,4 +17,5 @@ urlpatterns = [
 
     path("verifikasi-valid/<int:id>/", views.verifikasi_valid, name="verifikasi_valid"),
     path("verifikasi-tidak-sesuai/<int:id>/", views.verifikasi_tidak_sesuai, name="verifikasi_tidak_sesuai"),
+    path("edit-verifikasi/", views.edit_verifikasi, name="edit_verifikasi"),
 ]

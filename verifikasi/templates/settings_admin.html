@@ -3,81 +3,152 @@
 <html>
   <head>
     <title>Pengaturan Admin - Verifikasi Ijazah</title>
+
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
-    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=5" />
+
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=10" />
   </head>
 
   <body>
+    <!-- NAVBAR -->
     <nav class="navbar">
       <div class="nav-content">
         <div class="nav-left">
           <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
+
           <div class="nav-text">
             <h2>REGMABA UNSRAT - Verifikasi Ijazah</h2>
           </div>
         </div>
+
         <div class="nav-right">
-          <a href="{% url 'logout' %}" class="logout-btn">Keluar</a>
+          <a href="{% url 'logout' %}" class="logout-btn"> Keluar </a>
         </div>
       </div>
     </nav>
 
     <div class="container">
-      <!-- SAMPING -->
+      <!-- SIDEBAR -->
       <div class="sidebar">
         <h3 class="sidebar-title">Panel Admin</h3>
 
         <a href="{% url 'dashboard_admin' %}" class="menu-item">
-          <span>📊</span> Dasbor
+          <span>📊</span>
+          Dashboard
         </a>
 
         <a href="{% url 'reports_admin' %}" class="menu-item">
-          <span>📈</span> Laporan
+          <span>📈</span>
+          Laporan
         </a>
 
         <a href="{% url 'settings_admin' %}" class="menu-item active">
-          <span>⚙️</span> Pengaturan
+          <span>⚙️</span>
+          Pengaturan
         </a>
       </div>
 
-      <!-- UTAMA -->
+      <!-- MAIN -->
       <div class="main">
-        <h2>Pengaturan - Verifikasi Ijazah</h2>
-        <p class="section-subtitle">Konfigurasi dan pengaturan sistem admin</p>
+        <h1 class="settings-title">Pengaturan Admin</h1>
 
-        <div class="card section-card settings-box">
-          <div class="card-header">
-            <h3>Profil Admin</h3>
+        <p class="settings-subtitle">Kelola informasi akun administrator</p>
+
+        <!-- PROFILE CARD -->
+        <div class="profile-card">
+          <div class="profile-top">
+            <div class="profile-avatar">
+              {{ request.user.username|first|upper }}
+            </div>
+
+            <div class="profile-info">
+              <h2>{{ request.user.username }}</h2>
+
+              <p>{{ request.user.email }}</p>
+
+              <span class="role-badge"> Super Admin </span>
+            </div>
           </div>
-          <div class="card-body">
-            <div class="form-row">
-              <label>Nama Admin</label>
-              <span class="form-value"
-                >{{ admin.name|default:'Administrator' }}</span
-              >
+
+          <div class="profile-divider"></div>
+
+          <!-- DETAIL -->
+          <div class="profile-detail">
+            <div class="detail-row">
+              <label>Username</label>
+
+              <span> {{ request.user.username }} </span>
             </div>
 
-            <div class="form-row">
+            <div class="detail-row">
               <label>Email</label>
-              <span class="form-value"
-                >{{ admin.email|default:'admin@example.com' }}</span
-              >
+
+              <span> {{ request.user.email }} </span>
             </div>
 
-            <div class="form-row">
-              <label>Peran</label>
-              <span class="form-value">{{ admin.role|default:'Admin' }}</span>
-            </div>
+            <div class="detail-row">
+              <label>Role</label>
 
-            <div class="settings-actions">
-              <button class="edit-btn" type="button">Ubah Profil</button>
-              <button class="save-btn" type="button">
-                Simpan Semua Pengaturan
-              </button>
+              <span>Administrator</span>
             </div>
+          </div>
+
+          <!-- BUTTON -->
+          <div class="profile-action">
+            <button class="edit-btn" onclick="openModal()">Edit Profil</button>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2>Edit Profil</h2>
+
+          <button class="close-btn" onclick="closeModal()">✕</button>
+        </div>
+
+        <form method="POST">
+          {% csrf_token %}
+
+          <div class="input-group">
+            <label>Username</label>
+
+            <input
+              type="text"
+              name="username"
+              value="{{ request.user.username }}"
+            />
+          </div>
+
+          <div class="input-group">
+            <label>Email</label>
+
+            <input type="email" name="email" value="{{ request.user.email }}" />
+          </div>
+
+          <div class="input-group">
+            <label>Password Baru</label>
+
+            <input
+              type="password"
+              name="password"
+              placeholder="Kosongkan jika tidak diubah"
+            />
+          </div>
+
+          <div class="modal-action">
+            <button type="button" class="cancel-btn" onclick="closeModal()">
+              Batal
+            </button>
+
+            <button type="submit" class="save-btn">Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <script src="{% static 'js/settings.js' %}"></script>
   </body>
 </html>

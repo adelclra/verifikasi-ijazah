@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.shortcuts import redirect
 
 from io import BytesIO
 import csv
@@ -110,10 +111,23 @@ def upload_ijazah(request):
 
             obj.extracted_year = str(tahun) if tahun else ""
 
+            # ======================
+            # STATUS + EVALUASI
+            # ======================
+
             if not tahun:
                 obj.status = "TIDAK TERDETEKSI"
+                
+                obj.tidak_terbaca = True
+                obj.hasil_benar = False
+                obj.salah_tahun = False
+
             else:
                 obj.status = "MENUNGGU VERIFIKASI"
+                
+                obj.hasil_benar = True
+                obj.salah_tahun = False
+                obj.tidak_terbaca = False
 
             obj.save()
 
@@ -312,6 +326,32 @@ def view_document(request, document_id):
         "item": item,
         "file_url": item.file.url if item.file else None,
     })
+
+
+# ======================
+# EDIT VERIFIKASI
+# ======================
+def edit_verifikasi(request):
+
+    if request.method == "POST":
+
+        item_id = request.POST.get("id")
+
+        nama = request.POST.get("nama")
+
+        tahun = request.POST.get("tahun")
+
+        status = request.POST.get("status")
+
+        item = VerifikasiIjazah.objects.get(id=item_id)
+
+        item.nama = nama
+        item.extracted_year = tahun
+        item.status = status
+
+        item.save()
+
+    return redirect("dashboard_admin")
 
 
 # ======================
