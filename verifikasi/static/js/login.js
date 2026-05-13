@@ -13,3 +13,16 @@ function togglePassword() {
     eyeClosed.style.display = "none";
   }
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  const form = document.querySelector(".login-form");
+  const btn = document.querySelector(".login-btn");
+
+  if (form && btn) {
+    form.addEventListener("submit", function () {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="login-spinner"></span> Memproses...';
+      btn.style.opacity = "0.7";
+    });
+  }
+});

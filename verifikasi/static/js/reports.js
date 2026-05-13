@@ -4,16 +4,12 @@ let pieChartInstance = null;
 document.addEventListener("DOMContentLoaded", function () {
   const rawData = JSON.parse(document.getElementById("chart-data").textContent);
 
-  const dataValues = [rawData.valid, rawData.not_valid, rawData.pending];
+  const dataValues = [rawData.valid, rawData.not_valid, rawData.pending, rawData.unknown_year || 0];
+  const labels = ["Valid", "Tidak Valid", "Menunggu", "Tidak Terdeteksi"];
+  const bgColors = ["#27ae60", "#e74c3c", "#3498db", "#f39c12"];
 
-  const labels = ["Valid", "Tidak Valid", "Menunggu"];
-
-  if (barChartInstance) {
-    barChartInstance.destroy();
-  }
-  if (pieChartInstance) {
-    pieChartInstance.destroy();
-  }
+  if (barChartInstance) barChartInstance.destroy();
+  if (pieChartInstance) pieChartInstance.destroy();
 
   // ================= BAR =================
   barChartInstance = new Chart(document.getElementById("barChart"), {
@@ -23,6 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
       datasets: [
         {
           data: dataValues,
+          backgroundColor: bgColors,
           borderRadius: 8,
         },
       ],
@@ -50,6 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
       datasets: [
         {
           data: dataValues,
+          backgroundColor: bgColors,
         },
       ],
     },

@@ -3,182 +3,90 @@
 <html>
   <head>
     <title>Lihat Dokumen - Verifikasi Ijazah</title>
-
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
-
-    <link
-      rel="stylesheet"
-      href="{% static 'css/styleadmin.css' %}?v=6"
-    />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=20" />
   </head>
 
   <body>
-    <!-- NAVBAR -->
     <nav class="navbar">
       <div class="nav-content">
-
         <div class="nav-left">
-          <img
-            src="{% static 'images/logo-unsrat2.png' %}"
-            class="logo"
-          />
-
-          <div class="nav-text">
-            <h2>REGMABA UNSRAT - Verifikasi Ijazah</h2>
-          </div>
+          <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
+          <div class="nav-text"><h2>REGMABA UNSRAT - Verifikasi Ijazah</h2></div>
         </div>
-
-        <div class="nav-right">
-          <a href="{% url 'logout' %}" class="logout-btn">
-            Keluar
-          </a>
-        </div>
-
       </div>
     </nav>
 
-    <!-- CONTAINER -->
     <div class="container">
-
       <!-- SIDEBAR -->
       <div class="sidebar">
+        <div class="sidebar-profile">
+          <div class="sidebar-avatar">{{ request.user.username|make_list|first|upper }}</div>
+          <div class="sidebar-profile-info">
+            <p class="sidebar-profile-name">{{ request.user.get_full_name|default:request.user.username }}</p>
+            <p class="sidebar-profile-role">{% if request.user.is_superuser %}Super Admin{% else %}Admin{% endif %}</p>
+          </div>
+        </div>
 
-        <h3 class="sidebar-title">Panel Admin</h3>
+        <p class="sidebar-label">Menu Utama</p>
+        <a href="{% url 'dashboard_admin' %}" class="menu-item"><span>📊</span> Dashboard</a>
+        <a href="{% url 'reports_admin' %}" class="menu-item"><span>📈</span> Laporan</a>
 
-        <a href="{% url 'dashboard_admin' %}" class="menu-item">
-          <span>📊</span>
-          Dashboard
-        </a>
+        <p class="sidebar-label">Kelola</p>
+        <a href="{% url 'home' %}" class="menu-item" target="_blank"><span>📤</span> Halaman Unggah</a>
+        <a href="{% url 'settings_admin' %}" class="menu-item"><span>⚙️</span> Pengaturan</a>
 
-        <a href="{% url 'reports_admin' %}" class="menu-item">
-          <span>📈</span>
-          Laporan
-        </a>
-
-        <a href="{% url 'settings_admin' %}" class="menu-item">
-          <span>⚙️</span>
-          Pengaturan
-        </a>
-
+        <div class="sidebar-footer">
+          <div class="sidebar-stats">
+            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ total|default:"0" }}</span><span class="sidebar-stat-label">Dokumen</span></div>
+            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ valid|default:"0" }}</span><span class="sidebar-stat-label">Valid</span></div>
+            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ pending|default:"0" }}</span><span class="sidebar-stat-label">Menunggu</span></div>
+          </div>
+          <a href="{% url 'logout' %}" class="sidebar-logout"><span>🚪</span> Keluar</a>
+        </div>
       </div>
 
       <!-- MAIN -->
       <div class="main">
-
         <h2>Detail Verifikasi Dokumen</h2>
-
-        <p class="section-subtitle">
-          Informasi hasil verifikasi dokumen ijazah
-        </p>
+        <p class="section-subtitle">Informasi hasil verifikasi dokumen ijazah</p>
 
         <!-- FILE -->
         <div class="card section-card">
-
-          <div class="card-header">
-            <h3>File Dokumen</h3>
-          </div>
-
+          <div class="card-header"><h3>File Dokumen</h3></div>
           <div class="card-body">
-
             {% if file_url %}
-
             <div class="modern-file-card">
-
               <div class="modern-file-left">
-
                 <div class="modern-file-icon">
-
-                  {% if file_is_pdf %}
-                    📄
-                  {% elif file_is_image %}
-                    🖼️
-                  {% else %}
-                    📁
-                  {% endif %}
-
+                  {% if item.file.name|lower|slice:"-4:" == ".pdf" %}📄{% else %}🖼️{% endif %}
                 </div>
-
                 <div class="modern-file-info">
-
-                  <h4>{{ file_name }}</h4>
-
-                  <p>
-                    {% if file_is_pdf %}
-                      Dokumen PDF
-                    {% elif file_is_image %}
-                      Dokumen Gambar
-                    {% else %}
-                      Dokumen File
-                    {% endif %}
-                  </p>
-
+                  <h4>{{ item.file.name|cut:"ijazah/" }}</h4>
+                  <p>{% if item.file.name|lower|slice:"-4:" == ".pdf" %}Dokumen PDF{% else %}Dokumen Gambar{% endif %}</p>
                 </div>
-
               </div>
-
-              <a
-                href="{{ file_url }}"
-                target="_blank"
-                class="modern-view-btn"
-              >
-                Lihat Dokumen
-              </a>
-
+              <a href="{{ file_url }}" target="_blank" class="modern-view-btn">Lihat Dokumen</a>
             </div>
-
             {% else %}
-
             <p>File dokumen belum tersedia.</p>
-
             {% endif %}
-
           </div>
         </div>
 
         <!-- INFORMASI -->
         <div class="card section-card doc-info-card">
-
-          <div class="card-header">
-            <h3>Informasi Verifikasi</h3>
-          </div>
-
+          <div class="card-header"><h3>Informasi Verifikasi</h3></div>
           <div class="card-body">
-
-            <div class="form-row">
-              <label>Nama</label>
-
-              <span class="form-value">
-                {{ item.nama }}
-              </span>
-            </div>
-
-            <div class="form-row">
-              <label>Tahun Terdeteksi</label>
-
-              <span class="form-value">
-                {{ item.extracted_year|default:"-" }}
-              </span>
-            </div>
-
-            <div class="form-row">
-              <label>Status</label>
-
-              <span class="form-value">
-                {{ item.status }}
-              </span>
-            </div>
-
-            <div class="form-row">
-              <label>Tanggal Unggah</label>
-
-              <span class="form-value">
-                {{ item.created_at|date:"Y-m-d H:i" }}
-              </span>
-            </div>
-
+            <div class="form-row"><label>Nama (OCR)</label><span class="form-value">{{ item.nama_ocr|default:"-" }}</span></div>
+            <div class="form-row"><label>Nama (Koreksi)</label><span class="form-value">{{ item.nama }}</span></div>
+            <div class="form-row"><label>Tahun Terdeteksi</label><span class="form-value">{{ item.extracted_year|default:"-" }}</span></div>
+            <div class="form-row"><label>Status</label><span class="form-value">{{ item.status }}</span></div>
+            <div class="form-row"><label>CER</label><span class="form-value">{% if item.cer != None %}{{ item.cer|floatformat:2 }}%{% else %}-{% endif %}</span></div>
+            <div class="form-row"><label>WER</label><span class="form-value">{% if item.wer != None %}{{ item.wer|floatformat:2 }}%{% else %}-{% endif %}</span></div>
+            <div class="form-row"><label>Tanggal Unggah</label><span class="form-value">{{ item.created_at|date:"Y-m-d H:i" }}</span></div>
           </div>
         </div>
-
       </div>
     </div>
   </body>

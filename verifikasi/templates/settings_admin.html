@@ -3,26 +3,16 @@
 <html>
   <head>
     <title>Pengaturan Admin - Verifikasi Ijazah</title>
-
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
-
-    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=10" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=28" />
   </head>
 
   <body>
-    <!-- NAVBAR -->
     <nav class="navbar">
       <div class="nav-content">
         <div class="nav-left">
           <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
-
-          <div class="nav-text">
-            <h2>REGMABA UNSRAT - Verifikasi Ijazah</h2>
-          </div>
-        </div>
-
-        <div class="nav-right">
-          <a href="{% url 'logout' %}" class="logout-btn"> Keluar </a>
+          <div class="nav-text"><h2>REGMABA UNSRAT - Verifikasi Ijazah</h2></div>
         </div>
       </div>
     </nav>
@@ -30,73 +20,198 @@
     <div class="container">
       <!-- SIDEBAR -->
       <div class="sidebar">
-        <h3 class="sidebar-title">Panel Admin</h3>
+        <div class="sidebar-profile">
+          <div class="sidebar-avatar">{{ request.user.username|make_list|first|upper }}</div>
+          <div class="sidebar-profile-info">
+            <p class="sidebar-profile-name">{{ request.user.get_full_name|default:request.user.username }}</p>
+            <p class="sidebar-profile-role">{% if request.user.is_superuser %}Super Admin{% else %}Admin{% endif %}</p>
+          </div>
+        </div>
 
-        <a href="{% url 'dashboard_admin' %}" class="menu-item">
-          <span>📊</span>
-          Dashboard
-        </a>
+        <p class="sidebar-label">Menu Utama</p>
+        <a href="{% url 'dashboard_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}"><span>📊</span> Dashboard</a>
+        <a href="{% url 'reports_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'reports_admin' %}active{% endif %}"><span>📈</span> Laporan</a>
 
-        <a href="{% url 'reports_admin' %}" class="menu-item">
-          <span>📈</span>
-          Laporan
-        </a>
+        <p class="sidebar-label">Kelola</p>
+        <a href="{% url 'home' %}" class="menu-item" target="_blank"><span>📤</span> Halaman Unggah</a>
+        <a href="{% url 'settings_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"><span>⚙️</span> Pengaturan</a>
 
-        <a href="{% url 'settings_admin' %}" class="menu-item active">
-          <span>⚙️</span>
-          Pengaturan
-        </a>
+        <div class="sidebar-footer">
+          <div class="sidebar-stats">
+            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ total|default:"0" }}</span><span class="sidebar-stat-label">Dokumen</span></div>
+            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ valid|default:"0" }}</span><span class="sidebar-stat-label">Valid</span></div>
+            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ pending|default:"0" }}</span><span class="sidebar-stat-label">Menunggu</span></div>
+          </div>
+          <a href="{% url 'logout' %}" class="sidebar-logout"><span>🚪</span> Keluar</a>
+        </div>
       </div>
 
       <!-- MAIN -->
       <div class="main">
-        <h1 class="settings-title">Pengaturan Admin</h1>
+        <h2>Pengaturan</h2>
+        <p class="section-subtitle">Kelola informasi akun dan preferensi sistem</p>
 
-        <p class="settings-subtitle">Kelola informasi akun administrator</p>
+        {% if success %}
+        <div class="alert alert-success">✅ {{ success }}</div>
+        {% endif %}
+        {% if error %}
+        <div class="alert alert-error">⚠️ {{ error }}</div>
+        {% endif %}
 
-        <!-- PROFILE CARD -->
-        <div class="profile-card">
-          <div class="profile-top">
-            <div class="profile-avatar">
-              {{ request.user.username|first|upper }}
+        <div class="settings-grid">
+
+          <!-- PROFIL -->
+          <div class="settings-section profile-section">
+            <div class="settings-section-header">
+              <div class="settings-section-icon">👤</div>
+              <div>
+                <h3>Profil Admin</h3>
+                <p>Informasi akun yang sedang aktif</p>
+              </div>
             </div>
 
-            <div class="profile-info">
-              <h2>{{ request.user.username }}</h2>
-
-              <p>{{ request.user.email }}</p>
-
-              <span class="role-badge"> Super Admin </span>
-            </div>
-          </div>
-
-          <div class="profile-divider"></div>
-
-          <!-- DETAIL -->
-          <div class="profile-detail">
-            <div class="detail-row">
-              <label>Username</label>
-
-              <span> {{ request.user.username }} </span>
-            </div>
-
-            <div class="detail-row">
-              <label>Email</label>
-
-              <span> {{ request.user.email }} </span>
-            </div>
-
-            <div class="detail-row">
-              <label>Role</label>
-
-              <span>Administrator</span>
+            <div class="profile-banner">
+              <div class="profile-banner-avatar">
+                {{ request.user.username|first|upper }}
+              </div>
+              <div class="profile-banner-info">
+                <h3>{{ request.user.get_full_name|default:request.user.username }}</h3>
+                <p>{{ request.user.email|default:"Email belum diatur" }}</p>
+                <span class="role-badge">{% if request.user.is_superuser %}Super Admin{% else %}Admin{% endif %}</span>
+              </div>
+              <button class="profile-edit-btn" onclick="openModal()">
+                <span>✏️</span> Edit Profil
+              </button>
             </div>
           </div>
 
-          <!-- BUTTON -->
-          <div class="profile-action">
-            <button class="edit-btn" onclick="openModal()">Edit Profil</button>
+          <!-- DETAIL AKUN -->
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <div class="settings-section-icon">🔑</div>
+              <div>
+                <h3>Detail Akun</h3>
+                <p>Informasi login dan keamanan</p>
+              </div>
+            </div>
+
+            <div class="settings-detail-list">
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">👤</span>
+                  <div>
+                    <p class="settings-detail-label">Username</p>
+                    <p class="settings-detail-value">{{ request.user.username }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">📧</span>
+                  <div>
+                    <p class="settings-detail-label">Email</p>
+                    <p class="settings-detail-value">{{ request.user.email|default:"Belum diatur" }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">🛡️</span>
+                  <div>
+                    <p class="settings-detail-label">Role</p>
+                    <p class="settings-detail-value">{% if request.user.is_superuser %}Super Admin{% else %}Administrator{% endif %}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">🔒</span>
+                  <div>
+                    <p class="settings-detail-label">Password</p>
+                    <p class="settings-detail-value">••••••••</p>
+                  </div>
+                </div>
+                <button class="settings-change-btn" onclick="openModal()">Ubah</button>
+              </div>
+
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">📅</span>
+                  <div>
+                    <p class="settings-detail-label">Terakhir Login</p>
+                    <p class="settings-detail-value">{{ request.user.last_login|date:"d M Y, H:i"|default:"Belum pernah" }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">📆</span>
+                  <div>
+                    <p class="settings-detail-label">Akun Dibuat</p>
+                    <p class="settings-detail-value">{{ request.user.date_joined|date:"d M Y" }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+
+          <!-- INFO SISTEM -->
+          <div class="settings-section">
+            <div class="settings-section-header">
+              <div class="settings-section-icon">💻</div>
+              <div>
+                <h3>Informasi Sistem</h3>
+                <p>Detail aplikasi verifikasi ijazah</p>
+              </div>
+            </div>
+
+            <div class="settings-detail-list">
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">🏫</span>
+                  <div>
+                    <p class="settings-detail-label">Aplikasi</p>
+                    <p class="settings-detail-value">REGMABA UNSRAT - Verifikasi Ijazah</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">🔖</span>
+                  <div>
+                    <p class="settings-detail-label">Versi</p>
+                    <p class="settings-detail-value">1.0.0</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">🧠</span>
+                  <div>
+                    <p class="settings-detail-label">OCR Engine</p>
+                    <p class="settings-detail-value">PaddleOCR + Qwen AI</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="settings-detail-row">
+                <div class="settings-detail-left">
+                  <span class="settings-detail-icon">📊</span>
+                  <div>
+                    <p class="settings-detail-label">Total Dokumen Diproses</p>
+                    <p class="settings-detail-value">{{ total|default:"0" }} dokumen</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -106,7 +221,6 @@
       <div class="modal-box">
         <div class="modal-header">
           <h2>Edit Profil</h2>
-
           <button class="close-btn" onclick="closeModal()">✕</button>
         </div>
 
@@ -115,40 +229,27 @@
 
           <div class="input-group">
             <label>Username</label>
-
-            <input
-              type="text"
-              name="username"
-              value="{{ request.user.username }}"
-            />
+            <input type="text" name="username" value="{{ request.user.username }}" />
           </div>
 
           <div class="input-group">
             <label>Email</label>
-
             <input type="email" name="email" value="{{ request.user.email }}" />
           </div>
 
           <div class="input-group">
             <label>Password Baru</label>
-
-            <input
-              type="password"
-              name="password"
-              placeholder="Kosongkan jika tidak diubah"
-            />
+            <input type="password" name="password" placeholder="Kosongkan jika tidak diubah" />
           </div>
 
           <div class="modal-action">
-            <button type="button" class="cancel-btn" onclick="closeModal()">
-              Batal
-            </button>
-
-            <button type="submit" class="save-btn">Simpan</button>
+            <button type="button" class="cancel-btn" onclick="closeModal()">Batal</button>
+            <button type="submit" class="save-btn">Simpan Perubahan</button>
           </div>
         </form>
       </div>
     </div>
+
     <script src="{% static 'js/settings.js' %}"></script>
   </body>
 </html>

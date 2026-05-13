@@ -1,121 +1,115 @@
 import cv2
-import pytesseract
 import re
 import os
 import json
+import numpy as np
+
+from paddleocr import PaddleOCR
+
 from .pdf_utils import pdf_to_images
-from .qwen_api import extract_with_qwen   
+from .qwen_api import extract_with_qwen
+
 
 # =========================
-# CONFIG
+# INIT PADDLE OCR
 # =========================
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-os.environ["TESSDATA_PREFIX"] = r"C:\Program Files\Tesseract-OCR\tessdata"
+ocr = PaddleOCR(
+    use_angle_cls=True,
+    lang='id',
+    det_db_thresh=0.3,
+    det_db_box_thresh=0.5,
+    rec_algorithm='SVTR_LCNet',
+    use_gpu=False,
+    show_log=False,
+)
 
 
 # =========================
 # DEBUG SAVE
 # =========================
-def debug_save_image(img, name):
+def debug_save_image(image, name):
+
     os.makedirs("debug", exist_ok=True)
-    cv2.imwrite(f"debug/{name}.jpg", img)
+
+    cv2.imwrite(f"debug/{name}.jpg", image)
 
 
 # =========================
 # PREPROCESS
 # =========================
-def preprocess(img):
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    gray = cv2.fastNlMeansDenoising(gray, None, 15, 7, 21)
-    gray = cv2.convertScaleAbs(gray, alpha=1.3, beta=10)
-    return gray
+def preprocess(image):
 
+    try:
 
-# =========================
-# ROTATE
-# =========================
-def rotate_image(img, angle):
-    if angle == 0:
-        return img
-    elif angle == 90:
-        return cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-    elif angle == 180:
-        return cv2.rotate(img, cv2.ROTATE_180)
-    elif angle == 270:
-        return cv2.rotate(img, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        h, w = image.shape[:2]
+        target_width = 3000
+
+        if w < target_width:
+            scale = target_width / w
+            image = cv2.resize(
+                image,
+                None,
+                fx=scale,
+                fy=scale,
+                interpolation=cv2.INTER_CUBIC
+            )
+
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+        denoised = cv2.fastNlMeansDenoising(
+            gray,
+            h=10,
+            templateWindowSize=7,
+            searchWindowSize=21
+        )
+
+        clahe = cv2.createCLAHE(
+            clipLimit=2.0,
+            tileGridSize=(8, 8)
+        )
+        enhanced = clahe.apply(denoised)
+
+        result = cv2.cvtColor(enhanced, cv2.COLOR_GRAY2BGR)
+
+        return result
+
+    except Exception as e:
+
+        print("PREPROCESS ERROR:", e)
+
+        return image
 
 
 # =========================
 # CLEAN TEXT
 # =========================
 def clean(text):
-    text = re.sub(r"[^A-Za-z0-9\s/]", " ", text)
-    text = re.sub(r"\s+", " ", text)
+
+    text = re.sub(
+        r"[^A-Za-z0-9\s/.,:]",
+        " ",
+        text
+    )
+
+    text = re.sub(
+        r"\s+",
+        " ",
+        text
+    )
+
     return text.strip()
-
-
-# =========================
-# SCORING TEXT
-# =========================
-def score_text(text):
-    text = text.upper()
-    score = 0
-
-    keywords = ["IJAZAH", "TAHUN", "SEKOLAH", "MENENGAH"]
-
-    for k in keywords:
-        if k in text:
-            score += 5
-
-    if re.search(r"20\d{2}", text):
-        score += 10
-
-    score += len(text) // 50
-
-    return score
-
-
-# =========================
-# SMART ROTATION + OCR
-# =========================
-def smart_rotate_and_ocr(img):
-    best_text = ""
-    best_score = -1
-    best_img = img
-
-    for angle in [0, 90, 180, 270]:
-        rotated = rotate_image(img, angle)
-        processed = preprocess(rotated)
-
-        text = pytesseract.image_to_string(
-            processed,
-            lang="ind+eng",
-            config="--oem 3 --psm 6"
-        )
-
-        cleaned = clean(text)
-        score = score_text(cleaned)
-
-        print(f"\n=== ROTATION {angle}° SCORE: {score} ===")
-
-        if score > best_score:
-            best_score = score
-            best_text = cleaned
-            best_img = rotated
-
-    debug_save_image(best_img, "0_best_rotation")
-
-    return best_img, best_text
 
 
 # =========================
 # DETECT DOC TYPE
 # =========================
 def detect_document_type(text):
+
     text = text.upper()
 
     if "DAFTAR NILAI" in text:
         return "nilai"
+
     elif "IJAZAH" in text:
         return "ijazah"
 
@@ -123,16 +117,25 @@ def detect_document_type(text):
 
 
 # =========================
-# EKSTRAK TAHUN
+# EXTRACT YEAR
 # =========================
 def extract_year(text):
+
     text = text.upper()
 
-    match = re.search(r"(20\d{2})\s*/\s*(20\d{2})", text)
+    match = re.search(
+        r"(20\d{2})\s*/\s*(20\d{2})",
+        text
+    )
+
     if match:
         return match.group(2)
 
-    candidates = re.findall(r"\b20\d{2}\b", text)
+    candidates = re.findall(
+        r"\b20\d{2}\b",
+        text
+    )
+
     if candidates:
         return str(max(map(int, candidates)))
 
@@ -140,23 +143,37 @@ def extract_year(text):
 
 
 # =========================
-# CLEAN NAMA
+# CLEAN NAME
 # =========================
 def clean_name(name):
+
     if not name:
         return None
 
-    name = re.sub(r"[^A-Za-z\s]", "", name)
-    words = name.split()
-    words = [w for w in words if len(w) >= 3]
+    name = re.sub(
+        r"[^A-Za-z\s]",
+        "",
+        name
+    )
 
-    return " ".join(words[:4]).title()
+    words = name.split()
+
+    words = [
+        w for w in words
+        if len(w) >= 2
+    ]
+
+    if not words:
+        return None
+
+    return " ".join(words[:6]).title()
 
 
 # =========================
-# VALIDASI NAMA
+# VALIDATE NAME
 # =========================
 def is_valid_name(name):
+
     if not name:
         return False
 
@@ -165,34 +182,61 @@ def is_valid_name(name):
     if len(words) < 2:
         return False
 
-    for w in words:
-        if len(w) < 3:
-            return False
+    if len(name) < 5:
+        return False
 
     return True
 
 
 # =========================
-# FALLBACK EKSTRAK NAMA ANTARA MARKER
+# FALLBACK NAME EXTRACTION
 # =========================
 def extract_name_between_markers(text):
+
     text = text.upper().replace("\n", " ")
 
-    match = re.search(
-        r"nama\s+([A-Z\s]{5,})\s+tempat",
-        text,
-        re.IGNORECASE
-    )
+    patterns = [
 
-    if match:
-        candidate = match.group(1)
+        r"NAMA\s*[:/]?\s*([A-Z\s]{5,})\s*TEMPAT",
 
-        candidate = re.sub(r"[^A-Z\s]", "", candidate)
-        words = candidate.split()
-        words = [w for w in words if len(w) >= 3]
+        r"BAHWA\s+([A-Z\s]{5,})\s+TEMPAT",
 
-        if len(words) >= 2:
-            return " ".join(words[:4]).title()
+        r"ATAS NAMA\s+([A-Z\s]{5,})\s+LAHIR",
+
+        r"MENERANGKAN\s+BAHWA\s+([A-Z\s]{5,})",
+
+        r"NAMA\s*[:/]?\s*([A-Z\s]{5,})",
+
+    ]
+
+    for pattern in patterns:
+
+        match = re.search(
+            pattern,
+            text,
+            re.IGNORECASE
+        )
+
+        if match:
+
+            candidate = match.group(1)
+
+            candidate = re.sub(
+                r"[^A-Z\s]",
+                "",
+                candidate
+            )
+
+            words = candidate.split()
+
+            words = [
+                w for w in words
+                if len(w) >= 2
+            ]
+
+            if len(words) >= 2:
+
+                return " ".join(words[:6]).title()
 
     return None
 
@@ -201,59 +245,252 @@ def extract_name_between_markers(text):
 # PARSE QWEN RESULT
 # =========================
 def parse_qwen_result(ai_result):
+
     if not ai_result:
         return None, None
 
     try:
+
         data = json.loads(ai_result)
-        return data.get("nama"), data.get("tahun")
+
+        nama = data.get("nama")
+        tahun = data.get("tahun")
+
+        return (nama, tahun)
+
     except:
-        return ai_result.strip(), None
+
+        cleaned = ai_result.strip()
+
+        for prefix in [
+            "Nama Siswa:",
+            "NAMA SISWA:",
+            "Nama:",
+            "NAMA:",
+        ]:
+            if cleaned.upper().startswith(prefix.upper()):
+                cleaned = cleaned[len(prefix):].strip()
+
+        if cleaned.upper() == "NULL":
+            return None, None
+
+        if len(cleaned) >= 3:
+            return cleaned, None
+
+        return None, None
+
+
+# =========================
+# OCR USING PADDLE
+# =========================
+def paddle_ocr_text(image):
+
+    try:
+
+        result = ocr.ocr(
+            image,
+            cls=True
+        )
+
+        full_text = ""
+
+        if not result or not result[0]:
+            return ""
+
+        lines = sorted(
+            result[0],
+            key=lambda x: x[0][0][1]
+        )
+
+        for line in lines:
+
+            try:
+
+                text = line[1][0]
+                confidence = line[1][1]
+
+                if confidence < 0.5:
+                    continue
+
+                full_text += text + " "
+
+            except:
+                continue
+
+        return clean(full_text)
+
+    except Exception as e:
+
+        print("PADDLE OCR ERROR:", e)
+
+        return ""
+
+
+# =========================
+# OCR WITH LINE STRUCTURE
+# =========================
+def paddle_ocr_structured(image):
+    try:
+
+        result = ocr.ocr(
+            image,
+            cls=True
+        )
+
+        if not result or not result[0]:
+            return ""
+
+        lines = sorted(
+            result[0],
+            key=lambda x: x[0][0][1]
+        )
+
+        structured = []
+
+        for line in lines:
+
+            try:
+
+                text = line[1][0]
+                confidence = line[1][1]
+                y_pos = int(line[0][0][1])
+
+                if confidence < 0.4:
+                    continue
+
+                structured.append(
+                    f"[Y={y_pos}] {text}"
+                )
+
+            except:
+                continue
+
+        return "\n".join(structured)
+
+    except Exception as e:
+
+        print("PADDLE OCR STRUCTURED ERROR:", e)
+
+        return ""
 
 
 # =========================
 # MAIN FUNCTION
 # =========================
 def extract_data(file_path):
-    img = None
 
-    if file_path.lower().endswith(".pdf"):
-        images = pdf_to_images(file_path)
-        if images:
-            img = cv2.imread(images[0])
-    else:
-        img = cv2.imread(file_path)
+    try:
 
-    if img is None:
-        return "Gagal OCR", None, ""
+        image = None
 
-    img = cv2.resize(img, None, fx=1.8, fy=1.8)
+        # =========================
+        # PDF
+        # =========================
+        if file_path.lower().endswith(".pdf"):
 
-    img, text_full = smart_rotate_and_ocr(img)
+            images = pdf_to_images(file_path)
 
-    print("\n=== OCR FULL ===\n", text_full)
+            if images and len(images) > 0:
 
-    doc_type = detect_document_type(text_full)
-    print("\n=== DOCUMENT TYPE ===\n", doc_type)
+                image = cv2.imread(images[0])
 
-    # =========================
-    # AI (QWEN)
-    # =========================
-    ai_result = extract_with_qwen(text_full)
+        else:
 
-    print("\n=== QWEN RESULT ===\n", ai_result)
+            image = cv2.imread(file_path)
 
-    nama_ai, _ = parse_qwen_result(ai_result)
+        # =========================
+        # VALIDATE IMAGE
+        # =========================
+        if image is None:
 
-    if is_valid_name(nama_ai):
-        return clean_name(nama_ai), extract_year(text_full), text_full
+            print("Gagal membaca gambar")
 
-    # =========================
-    # FALLBACK 
-    # =========================
-    nama_marker = extract_name_between_markers(text_full)
+            return (
+                "Tidak Terdeteksi",
+                None,
+                ""
+            )
 
-    if is_valid_name(nama_marker):
-        return nama_marker, extract_year(text_full), text_full
+        # =========================
+        # PREPROCESS
+        # =========================
+        processed_image = preprocess(image)
 
-    return "Perlu Verifikasi Manual", extract_year(text_full), text_full
+        debug_save_image(
+            processed_image,
+            "0_processed"
+        )
+
+        # =========================
+        # OCR 
+        # =========================
+        text_full = paddle_ocr_text(processed_image)
+        text_structured = paddle_ocr_structured(processed_image)
+
+        print("\n=== OCR FULL ===\n")
+        print(text_full)
+
+        # =========================
+        # DOCUMENT TYPE
+        # =========================
+        doc_type = detect_document_type(text_full)
+
+        print("\n=== DOCUMENT TYPE ===\n")
+        print(doc_type)
+
+        # =========================
+        # YEAR
+        # =========================
+        tahun = extract_year(text_full)
+
+        # =========================
+        # QWEN 
+        # =========================
+        ai_result = extract_with_qwen(text_structured or text_full)
+
+        print("\n=== QWEN RESULT ===\n")
+        print(ai_result)
+
+        nama_ai, tahun_ai = parse_qwen_result(ai_result)
+
+        if not tahun and tahun_ai:
+            tahun = tahun_ai
+
+        if is_valid_name(nama_ai):
+
+            return (
+                clean_name(nama_ai),
+                tahun,
+                text_full
+            )
+
+        # =========================
+        # FALLBACK
+        # =========================
+        nama_marker = extract_name_between_markers(
+            text_full
+        )
+
+        if is_valid_name(nama_marker):
+
+            return (
+                nama_marker,
+                tahun,
+                text_full
+            )
+
+        return (
+            "Perlu Verifikasi Manual",
+            tahun,
+            text_full
+        )
+
+    except Exception as e:
+
+        print("EXTRACT DATA ERROR:", e)
+
+        return (
+            "Tidak Terdeteksi",
+            None,
+            ""
+        )
