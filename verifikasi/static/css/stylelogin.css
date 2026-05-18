@@ -1,11 +1,14 @@
+@import "vars.css";
+
+/* Map older local names to centralized variables for compatibility */
 :root {
-  --primary: #10b8cc;
-  --primary-dark: #069cb0;
-  --primary-light: #e0f7fa;
-  --text: #1e293b;
-  --text-light: #64748b;
-  --border: #e2e8f0;
-  --bg: #f8fafc;
+  --primary: var(--color-primary);
+  --primary-dark: var(--color-primary-dark);
+  --primary-light: var(--color-primary-light);
+  --text: var(--color-text);
+  --text-light: var(--color-text-light);
+  --border: var(--color-border);
+  --bg: var(--color-bg);
 }
 
 * {
@@ -28,7 +31,7 @@ body {
 /* ================= LEFT ================= */
 .login-left {
   flex: 1;
-  background: linear-gradient(160deg, #0c9aab 0%, #10b8cc 40%, #0ea5b7 100%);
+  background: var(--primary);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -111,16 +114,17 @@ body {
   background: rgba(255, 255, 255, 0.16);
 }
 
-.login-feature-item > span {
-  font-size: 24px;
-  flex-shrink: 0;
+.login-feature-icon {
   width: 36px;
   height: 36px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: white;
 }
 
 .login-feature-item h4 {
@@ -184,11 +188,12 @@ body {
   width: 56px;
   height: 56px;
   border-radius: 14px;
-  background: linear-gradient(135deg, var(--primary-light), #b2ebf2);
+  background: var(--primary-light);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: 22px;
+  color: #0891b2;
   margin: 0 auto 16px;
 }
 
@@ -246,7 +251,8 @@ body {
 .input-icon {
   position: absolute;
   left: 14px;
-  font-size: 16px;
+  font-size: 14px;
+  color: #94a3b8;
   z-index: 1;
   pointer-events: none;
 }
@@ -333,7 +339,7 @@ body {
   font-size: 15px;
   font-weight: 700;
   color: white;
-  background: linear-gradient(135deg, #10b8cc 0%, #069cb0 100%);
+  background: var(--primary);
   cursor: pointer;
   transition: all 0.25s ease;
   box-shadow: 0 4px 15px rgba(16, 184, 204, 0.3);
@@ -374,6 +380,29 @@ body {
   }
 }
 
+/* ================= ADMIN FOOTER ================= */
+.admin-footer {
+  background: var(--primary);
+  margin-top: 24px;
+}
+
+.admin-footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 18px 24px;
+  text-align: center;
+}
+
+.admin-footer-content p {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.3px;
+}
+
+.admin-footer-content i {
+  margin-right: 4px;
+}
+
 /* ================= RESPONSIVE ================= */
 @media (max-width: 900px) {
   .login-page {
@@ -381,11 +410,22 @@ body {
   }
 
   .login-left {
-    padding: 36px 28px;
+    padding: 32px 24px;
+    min-height: auto;
   }
 
   .login-left-content h1 {
     font-size: 22px;
+  }
+
+  .login-hero-subtitle {
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  .login-hero-logo {
+    width: 60px;
+    height: 60px;
   }
 
   .login-features {
@@ -397,38 +437,106 @@ body {
   }
 
   .login-right {
-    padding: 30px 20px;
+    padding: 28px 20px;
+  }
+
+  .login-brand h2 {
+    font-size: 20px;
   }
 }
 
 @media (max-width: 480px) {
   .login-left {
-    padding: 28px 20px;
-  }
-
-  .login-hero-logo {
-    width: 60px;
-    height: 60px;
+    padding: 24px 16px;
   }
 
   .login-left-content h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .login-hero-subtitle {
-    font-size: 13px;
-    margin-bottom: 16px;
+    font-size: 12px;
+    margin-bottom: 10px;
+  }
+
+  .login-hero-logo {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 14px;
   }
 
   .login-right {
     padding: 24px 16px;
   }
 
-  .login-brand h2 {
-    font-size: 20px;
-  }
-
   .login-card {
     max-width: 100%;
+  }
+
+  .login-brand-icon {
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+    margin-bottom: 12px;
+  }
+
+  .login-brand h2 {
+    font-size: 18px;
+  }
+
+  .login-subtitle {
+    font-size: 12px;
+  }
+
+  .input-field {
+    padding: 11px 12px 11px 40px;
+    font-size: 13px;
+  }
+
+  .input-icon {
+    left: 12px;
+    font-size: 13px;
+  }
+
+  .login-btn {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .login-error {
+    font-size: 12px;
+    padding: 10px 12px;
+  }
+
+  .login-feature-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-left {
+    padding: 20px 14px;
+  }
+
+  .login-left-content h1 {
+    font-size: 16px;
+  }
+
+  .login-right {
+    padding: 20px 14px;
+  }
+
+  .login-brand h2 {
+    font-size: 16px;
+  }
+
+  .input-label {
+    font-size: 12px;
+  }
+
+  .remember-me {
+    font-size: 12px;
   }
 }

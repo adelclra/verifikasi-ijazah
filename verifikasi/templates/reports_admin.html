@@ -4,77 +4,175 @@
     <title>Laporan Admin - Verifikasi Ijazah</title>
     {% load static %}
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
-    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=22" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=35" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
 
   <body>
     <nav class="navbar">
       <div class="nav-content">
+        <div class="nav-right">
+          <div class="menu-toggle">
+            <button
+              class="sidebar-toggle"
+              id="sidebarToggle"
+              onclick="toggleSidebar()"
+              aria-label="Toggle sidebar"
+            >
+              <i class="fas fa-bars"></i>
+            </button>
+            <span class="menu-label">Menu</span>
+          </div>
+        </div>
         <div class="nav-left">
           <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
-          <div class="nav-text"><h2>REGMABA UNSRAT - Verifikasi Ijazah</h2></div>
+          <div class="nav-text"><h2>REGMABA UNSRAT</h2></div>
         </div>
       </div>
     </nav>
+
+    <div
+      class="sidebar-overlay"
+      id="sidebarOverlay"
+      onclick="toggleSidebar()"
+    ></div>
 
     <div class="container">
       <!-- SIDEBAR -->
       <div class="sidebar">
         <div class="sidebar-profile">
-          <div class="sidebar-avatar">{{ request.user.username|make_list|first|upper }}</div>
+          <div class="sidebar-avatar">
+            {{ request.user.username|make_list|first|upper }}
+          </div>
           <div class="sidebar-profile-info">
-            <p class="sidebar-profile-name">{{ request.user.get_full_name|default:request.user.username }}</p>
-            <p class="sidebar-profile-role">{% if request.user.is_superuser %}Super Admin{% else %}Admin{% endif %}</p>
+            <p class="sidebar-profile-name">
+              {{ request.user.get_full_name|default:request.user.username }}
+            </p>
+            <p class="sidebar-profile-role">
+              {% if request.user.is_superuser %}
+              Super Admin
+              {% else %}
+              Admin
+              {% endif %}
+            </p>
           </div>
         </div>
-
         <p class="sidebar-label">Menu Utama</p>
-        <a href="{% url 'dashboard_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}"><span>📊</span> Dashboard</a>
-        <a href="{% url 'reports_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'reports_admin' %}active{% endif %}"><span>📈</span> Laporan</a>
-
+        <a
+          href="{% url 'dashboard_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}"
+          ><i class="fas fa-chart-pie"></i> Dashboard</a
+        >
+        <a
+          href="{% url 'reports_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'reports_admin' %}active{% endif %}"
+          ><i class="fas fa-chart-line"></i> Laporan</a
+        >
         <p class="sidebar-label">Kelola</p>
-        <a href="{% url 'home' %}" class="menu-item" target="_blank"><span>📤</span> Halaman Unggah</a>
-        <a href="{% url 'settings_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"><span>⚙️</span> Pengaturan</a>
-
+        <a href="{% url 'home' %}" class="menu-item" target="_blank"
+          ><i class="fas fa-upload"></i> Halaman Unggah</a
+        >
+        <a
+          href="{% url 'settings_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"
+          ><i class="fas fa-cog"></i> Pengaturan</a
+        >
         <div class="sidebar-footer">
           <div class="sidebar-stats">
-            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ total|default:"0" }}</span><span class="sidebar-stat-label">Dokumen</span></div>
-            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ valid|default:"0" }}</span><span class="sidebar-stat-label">Valid</span></div>
-            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ pending|default:"0" }}</span><span class="sidebar-stat-label">Menunggu</span></div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ total|default:"0" }}</span
+              ><span class="sidebar-stat-label">Dokumen</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ valid|default:"0" }}</span
+              ><span class="sidebar-stat-label">Valid</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ pending|default:"0" }}</span
+              ><span class="sidebar-stat-label">Menunggu</span>
+            </div>
           </div>
-          <a href="{% url 'logout' %}" class="sidebar-logout"><span>🚪</span> Keluar</a>
+          <a href="{% url 'logout' %}" class="sidebar-logout"
+            ><i class="fas fa-sign-out-alt"></i> Keluar</a
+          >
         </div>
       </div>
 
       <!-- MAIN -->
       <div class="main">
-        <h2>Laporan - Verifikasi Ijazah</h2>
-        <p class="section-subtitle">Laporan dan analitik hasil verifikasi dokumen</p>
+        <h2>
+          <i class="fas fa-chart-line" style="color: var(--color-primary)"></i>
+          Laporan - Verifikasi Ijazah
+        </h2>
+        <p class="section-subtitle">
+          Laporan dan analitik hasil verifikasi dokumen
+        </p>
 
         <div class="stats">
-          <div class="card"><p>Total Bulan Ini</p><h3>{{ total_month }}</h3></div>
-          <div class="card"><p>Valid</p><h3 class="text-success">{{ valid }}</h3></div>
-          <div class="card"><p>Tidak Valid</p><h3 class="text-error">{{ not_valid }}</h3></div>
-          <div class="card"><p>Tidak Terdeteksi</p><h3 class="text-warning">{{ unknown_year }}</h3></div>
-          <div class="card"><p>Menunggu</p><h3 class="text-info">{{ pending }}</h3></div>
-          <div class="card"><p>Akurasi Verifikasi</p><h3>{{ accuracy }}%</h3></div>
+          <div class="card">
+            <p><i class="fas fa-folder"></i> Total Bulan Ini</p>
+            <h3>{{ total_month }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-check-circle"></i> Valid</p>
+            <h3 class="text-success">{{ valid }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-times-circle"></i> Tidak Valid</p>
+            <h3 class="text-error">{{ not_valid }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-question-circle"></i> Tidak Terdeteksi</p>
+            <h3 class="text-warning">{{ unknown_year }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-clock"></i> Menunggu</p>
+            <h3 class="text-info">{{ pending }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-bullseye"></i> Akurasi Verifikasi</p>
+            <h3>{{ accuracy }}%</h3>
+          </div>
         </div>
 
         <div class="stats">
-          <div class="card"><p>CER Rata-rata</p><h3>{{ avg_cer }}%</h3></div>
-          <div class="card"><p>WER Rata-rata</p><h3>{{ avg_wer }}%</h3></div>
-          <div class="card"><p>Akurasi CER</p><h3 class="text-success">{{ akurasi_cer }}%</h3></div>
-          <div class="card"><p>Akurasi WER</p><h3 class="text-success">{{ akurasi_wer }}%</h3></div>
+          <div class="card">
+            <p><i class="fas fa-font"></i> CER Rata-rata</p>
+            <h3>{{ avg_cer }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-align-left"></i> WER Rata-rata</p>
+            <h3>{{ avg_wer }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-spell-check"></i> Akurasi CER</p>
+            <h3 class="text-success">{{ akurasi_cer }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-check-double"></i> Akurasi WER</p>
+            <h3 class="text-success">{{ akurasi_wer }}%</h3>
+          </div>
         </div>
 
         <!-- GRAFIK -->
         <div class="section-card">
-          <div class="card-header"><h3>Visualisasi Data</h3></div>
+          <div class="card-header">
+            <h3><i class="fas fa-chart-bar"></i> Visualisasi Data</h3>
+          </div>
           <div class="card-body">
             <div class="chart-wrapper">
-              <div class="chart-card bar"><h4>Distribusi Status</h4><canvas id="barChart"></canvas></div>
-              <div class="chart-card pie"><h4>Persentase Verifikasi</h4><canvas id="pieChart"></canvas></div>
+              <div class="chart-card bar">
+                <h4><i class="fas fa-chart-column"></i> Distribusi Status</h4>
+                <canvas id="barChart"></canvas>
+              </div>
+              <div class="chart-card pie">
+                <h4><i class="fas fa-chart-pie"></i> Persentase Verifikasi</h4>
+                <canvas id="pieChart"></canvas>
+              </div>
             </div>
           </div>
         </div>
@@ -89,44 +187,121 @@
         </script>
 
         <!-- EKSPOR -->
-        <div class="report-actions" style="margin-top: 16px;">
-          <a href="{% url 'download_reports_pdf' %}?search={{ search }}&amp;status={{ status }}" class="btn-view">📄 Ekspor PDF</a>
-          <a href="{% url 'download_reports_excel' %}?search={{ search }}&amp;status={{ status }}" class="btn-approve">📊 Ekspor Excel</a>
+        <div class="report-actions" style="margin-top: 16px">
+          <a
+            href="{% url 'download_reports_pdf' %}?search={{ search }}&amp;status={{ status }}"
+            class="btn-view"
+            ><i class="fas fa-file-pdf"></i> Ekspor PDF</a
+          >
+          <a
+            href="{% url 'download_reports_excel' %}?search={{ search }}&amp;status={{ status }}"
+            class="btn-approve"
+            ><i class="fas fa-file-excel"></i> Ekspor Excel</a
+          >
         </div>
 
         <!-- TABEL -->
         <div class="section-card">
-          <div class="card-header"><h3>Rincian Verifikasi</h3></div>
+          <div class="card-header">
+            <h3><i class="fas fa-list-alt"></i> Rincian Verifikasi</h3>
+          </div>
           <div class="card-body">
             <form method="get" class="table-controls">
-              <input type="text" name="search" placeholder="Cari..." value="{{ search }}" />
+              <input
+                type="text"
+                name="search"
+                placeholder="Cari..."
+                value="{{ search }}"
+              />
               <select name="status">
                 <option value="">Semua Status</option>
-                <option value="VALID" {% if status == "VALID" %}selected{% endif %}>Valid</option>
-                <option value="MENUNGGU" {% if status == "MENUNGGU" %}selected{% endif %}>Menunggu</option>
-                <option value="TIDAK MEMENUHI SYARAT" {% if status == "TIDAK MEMENUHI SYARAT" %}selected{% endif %}>Tidak Valid</option>
-                <option value="TIDAK TERDETEKSI" {% if status == "TIDAK TERDETEKSI" %}selected{% endif %}>Tidak Terdeteksi</option>
+                <option
+                  value="VALID"
+                  {%
+                  if
+                  status=""
+                  ="VALID"
+                  %}selected{%
+                  endif
+                  %}
+                >
+                  Valid
+                </option>
+                <option
+                  value="MENUNGGU"
+                  {%
+                  if
+                  status=""
+                  ="MENUNGGU"
+                  %}selected{%
+                  endif
+                  %}
+                >
+                  Menunggu
+                </option>
+                <option
+                  value="TIDAK MEMENUHI SYARAT"
+                  {%
+                  if
+                  status=""
+                  ="TIDAK MEMENUHI SYARAT"
+                  %}selected{%
+                  endif
+                  %}
+                >
+                  Tidak Valid
+                </option>
+                <option
+                  value="TIDAK TERDETEKSI"
+                  {%
+                  if
+                  status=""
+                  ="TIDAK TERDETEKSI"
+                  %}selected{%
+                  endif
+                  %}
+                >
+                  Tidak Terdeteksi
+                </option>
               </select>
-              <button type="submit" class="btn-view">🔍</button>
+              <button type="submit" class="btn-view">
+                <i class="fas fa-search"></i>
+              </button>
             </form>
 
             <div class="pagination">
               {% if report_rows.has_previous %}
-              <a href="?page=1&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">&laquo;</a>
-              <a href="?page={{ report_rows.previous_page_number }}&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">Sebelumnya</a>
-              {% endif %}
-              {% for num in report_rows.paginator.page_range %}
-              {% if num >= report_rows.number|add:'-2' and num <= report_rows.number|add:'2' %}
+              <a
+                href="?page=1&amp;search={{ search }}&amp;status={{ status }}"
+                class="page-btn"
+                >&laquo;</a
+              >
+              <a
+                href="?page={{ report_rows.previous_page_number }}&amp;search={{ search }}&amp;status={{ status }}"
+                class="page-btn"
+                >Sebelumnya</a
+              >
+              {% endif %} {% for num in report_rows.paginator.page_range %} 
+              {% if num >= report_rows.number|add:'-2' and num <= report_rows.number|add:'2' %} 
               {% if report_rows.number == num %}
               <span class="page-btn active">{{ num }}</span>
               {% else %}
-              <a href="?page={{ num }}&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">{{ num }}</a>
-              {% endif %}
-              {% endif %}
-              {% endfor %}
-              {% if report_rows.has_next %}
-              <a href="?page={{ report_rows.next_page_number }}&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">Berikutnya</a>
-              <a href="?page={{ report_rows.paginator.num_pages }}&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">&raquo;</a>
+              <a
+                href="?page={{ num }}&amp;search={{ search }}&amp;status={{ status }}"
+                class="page-btn"
+                >{{ num }}</a
+              >
+              {% endif %} {% endif %} {% endfor %} {% if report_rows.has_next %}
+              <a
+                href="?page={{ report_rows.next_page_number }}&amp;search={{ search }}&amp;status={{ status }}"
+                class="page-btn"
+                >Berikutnya</a
+              >
+              <a
+                href="?page={{ report_rows.paginator.num_pages }}&amp;search={{ search }}&amp;status={{ status }}"
+                class="page-btn"
+                >&raquo;</a
+              >
               {% endif %}
             </div>
 
@@ -144,13 +319,38 @@
                 <td>{{ forloop.counter0|add:report_rows.start_index }}</td>
                 <td>{{ item.nama }}</td>
                 <td>{{ item.extracted_year|default:"-" }}</td>
-                <td>{% if item.cer != None %}{{ item.cer|floatformat:2 }}%{% else %}-{% endif %}</td>
-                <td>{% if item.wer != None %}{{ item.wer|floatformat:2 }}%{% else %}-{% endif %}</td>
                 <td>
-                  {% if item.status == "VALID" %}<span class="badge badge-success">VALID</span>
-                  {% elif item.status == "TIDAK MEMENUHI SYARAT" %}<span class="badge badge-error">TIDAK VALID</span>
-                  {% elif item.status == "MENUNGGU VERIFIKASI" %}<span class="badge badge-info">MENUNGGU</span>
-                  {% else %}<span class="badge badge-warning">TIDAK TERDETEKSI</span>{% endif %}
+                  {% if item.cer != None %}
+                  {{ item.cer|floatformat:2 }}
+                  %
+                  {% else%}
+                  -
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.wer != None %}
+                  {{ item.wer|floatformat:2 }}
+                  %
+                  {% else%}
+                  -
+                  {% endif %}
+                </td>
+                <td>
+                  {% if item.status == "VALID" %}<span
+                    class="badge badge-success"
+                    >VALID</span
+                  >
+                  {% elif item.status == "TIDAK MEMENUHI SYARAT" %}<span
+                    class="badge badge-error"
+                    >TIDAK VALID</span
+                  >
+                  {% elif item.status == "MENUNGGU VERIFIKASI" %}<span
+                    class="badge badge-info"
+                    >MENUNGGU</span
+                  >
+                  {% else %}<span class="badge badge-warning"
+                    >TIDAK TERDETEKSI</span
+                  >{% endif %}
                 </td>
               </tr>
               {% endfor %}
@@ -160,6 +360,17 @@
       </div>
     </div>
 
-    <script src="{% static 'js/reports.js' %}?v=4"></script>
+    <!-- FOOTER -->
+    <footer class="admin-footer">
+      <div class="admin-footer-content">
+        <p>
+          <i class="fas fa-university"></i> REGMABA UNSRAT &mdash; Sistem
+          Verifikasi Tahun Ijazah &copy; 2026 Universitas Sam Ratulangi
+        </p>
+      </div>
+    </footer>
+
+    <script src="{% static 'js/reports.js' %}?v=5"></script>
+    <script src="{% static 'js/sidebar.js' %}"></script>
   </body>
 </html>

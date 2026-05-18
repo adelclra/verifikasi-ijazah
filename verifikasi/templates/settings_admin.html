@@ -4,66 +4,133 @@
   <head>
     <title>Pengaturan Admin - Verifikasi Ijazah</title>
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
-    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=28" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=35" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
   </head>
 
   <body>
     <nav class="navbar">
       <div class="nav-content">
+        <div class="nav-right">
+          <div class="menu-toggle">
+            <button
+              class="sidebar-toggle"
+              id="sidebarToggle"
+              onclick="toggleSidebar()"
+              aria-label="Toggle sidebar"
+            >
+              <i class="fas fa-bars"></i>
+            </button>
+            <span class="menu-label">Menu</span>
+          </div>
+        </div>
         <div class="nav-left">
           <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
-          <div class="nav-text"><h2>REGMABA UNSRAT - Verifikasi Ijazah</h2></div>
+          <div class="nav-text"><h2>REGMABA UNSRAT</h2></div>
         </div>
       </div>
     </nav>
+
+    <div
+      class="sidebar-overlay"
+      id="sidebarOverlay"
+      onclick="toggleSidebar()"
+    ></div>
 
     <div class="container">
       <!-- SIDEBAR -->
       <div class="sidebar">
         <div class="sidebar-profile">
-          <div class="sidebar-avatar">{{ request.user.username|make_list|first|upper }}</div>
+          <div class="sidebar-avatar">
+            {{ request.user.username|make_list|first|upper }}
+          </div>
           <div class="sidebar-profile-info">
-            <p class="sidebar-profile-name">{{ request.user.get_full_name|default:request.user.username }}</p>
-            <p class="sidebar-profile-role">{% if request.user.is_superuser %}Super Admin{% else %}Admin{% endif %}</p>
+            <p class="sidebar-profile-name">
+              {{ request.user.get_full_name|default:request.user.username }}
+            </p>
+            <p class="sidebar-profile-role">
+              {% if request.user.is_superuser %}
+              Super Admin
+              {% else %}
+              Admin
+              {% endif %}
+            </p>
           </div>
         </div>
 
         <p class="sidebar-label">Menu Utama</p>
-        <a href="{% url 'dashboard_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}"><span>📊</span> Dashboard</a>
-        <a href="{% url 'reports_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'reports_admin' %}active{% endif %}"><span>📈</span> Laporan</a>
+        <a
+          href="{% url 'dashboard_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}"
+          ><i class="fas fa-chart-pie"></i> Dashboard</a
+        >
+        <a
+          href="{% url 'reports_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'reports_admin' %}active{% endif %}"
+          ><i class="fas fa-chart-line"></i> Laporan</a
+        >
 
         <p class="sidebar-label">Kelola</p>
-        <a href="{% url 'home' %}" class="menu-item" target="_blank"><span>📤</span> Halaman Unggah</a>
-        <a href="{% url 'settings_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"><span>⚙️</span> Pengaturan</a>
+        <a href="{% url 'home' %}" class="menu-item" target="_blank"
+          ><i class="fas fa-upload"></i> Halaman Unggah</a
+        >
+        <a
+          href="{% url 'settings_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"
+          ><i class="fas fa-cog"></i> Pengaturan</a
+        >
 
         <div class="sidebar-footer">
           <div class="sidebar-stats">
-            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ total|default:"0" }}</span><span class="sidebar-stat-label">Dokumen</span></div>
-            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ valid|default:"0" }}</span><span class="sidebar-stat-label">Valid</span></div>
-            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ pending|default:"0" }}</span><span class="sidebar-stat-label">Menunggu</span></div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ total|default:"0" }}</span
+              ><span class="sidebar-stat-label">Dokumen</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ valid|default:"0" }}</span
+              ><span class="sidebar-stat-label">Valid</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ pending|default:"0" }}</span
+              ><span class="sidebar-stat-label">Menunggu</span>
+            </div>
           </div>
-          <a href="{% url 'logout' %}" class="sidebar-logout"><span>🚪</span> Keluar</a>
+          <a href="{% url 'logout' %}" class="sidebar-logout"
+            ><i class="fas fa-sign-out-alt"></i> Keluar</a
+          >
         </div>
       </div>
 
       <!-- MAIN -->
       <div class="main">
-        <h2>Pengaturan</h2>
-        <p class="section-subtitle">Kelola informasi akun dan preferensi sistem</p>
+        <h2>
+          <i class="fas fa-cog" style="color: var(--color-primary)"></i>
+          Pengaturan
+        </h2>
+        <p class="section-subtitle">
+          Kelola informasi akun dan preferensi sistem
+        </p>
 
         {% if success %}
-        <div class="alert alert-success">✅ {{ success }}</div>
-        {% endif %}
-        {% if error %}
-        <div class="alert alert-error">⚠️ {{ error }}</div>
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle"></i> {{ success }}
+        </div>
+        {% endif %} {% if error %}
+        <div class="alert alert-error">
+          <i class="fas fa-exclamation-triangle"></i> {{ error }}
+        </div>
         {% endif %}
 
         <div class="settings-grid">
-
           <!-- PROFIL -->
-          <div class="settings-section profile-section">
+          <div class="settings-section">
             <div class="settings-section-header">
-              <div class="settings-section-icon">👤</div>
+              <div class="settings-section-icon">
+                <i class="fas fa-user"></i>
+              </div>
               <div>
                 <h3>Profil Admin</h3>
                 <p>Informasi akun yang sedang aktif</p>
@@ -75,12 +142,22 @@
                 {{ request.user.username|first|upper }}
               </div>
               <div class="profile-banner-info">
-                <h3>{{ request.user.get_full_name|default:request.user.username }}</h3>
+                <h3>
+                  {{ request.user.get_full_name|default:request.user.username }}
+                </h3>
                 <p>{{ request.user.email|default:"Email belum diatur" }}</p>
-                <span class="role-badge">{% if request.user.is_superuser %}Super Admin{% else %}Admin{% endif %}</span>
+                <span class="role-badge"
+                  ><i class="fas fa-shield-alt"></i> 
+                  {% if request.user.is_superuser %}
+                  Super Admin
+                  {% else %}
+                  Admin
+                  {% endif%}
+                  </span
+                >
               </div>
               <button class="profile-edit-btn" onclick="openModal()">
-                <span>✏️</span> Edit Profil
+                <i class="fas fa-pen"></i> Edit Profil
               </button>
             </div>
           </div>
@@ -88,7 +165,9 @@
           <!-- DETAIL AKUN -->
           <div class="settings-section">
             <div class="settings-section-header">
-              <div class="settings-section-icon">🔑</div>
+              <div class="settings-section-icon">
+                <i class="fas fa-key"></i>
+              </div>
               <div>
                 <h3>Detail Akun</h3>
                 <p>Informasi login dan keamanan</p>
@@ -98,61 +177,90 @@
             <div class="settings-detail-list">
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">👤</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-user"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">Username</p>
-                    <p class="settings-detail-value">{{ request.user.username }}</p>
+                    <p class="settings-detail-value">
+                      {{ request.user.username }}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">📧</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-envelope"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">Email</p>
-                    <p class="settings-detail-value">{{ request.user.email|default:"Belum diatur" }}</p>
+                    <p class="settings-detail-value">
+                      {{ request.user.email|default:"Belum diatur" }}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">🛡️</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-shield-alt"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">Role</p>
-                    <p class="settings-detail-value">{% if request.user.is_superuser %}Super Admin{% else %}Administrator{% endif %}</p>
+                    <p class="settings-detail-value">
+                      {% if request.user.is_superuser %}
+                      Super Admin
+                      {% else%}
+                      Administrator
+                      {% endif %}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">🔒</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-lock"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">Password</p>
                     <p class="settings-detail-value">••••••••</p>
                   </div>
                 </div>
-                <button class="settings-change-btn" onclick="openModal()">Ubah</button>
+                <button class="settings-change-btn" onclick="openModal()">
+                  <i class="fas fa-pen"></i> Ubah
+                </button>
               </div>
 
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">📅</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-calendar-alt"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">Terakhir Login</p>
-                    <p class="settings-detail-value">{{ request.user.last_login|date:"d M Y, H:i"|default:"Belum pernah" }}</p>
+                    <p class="settings-detail-value">
+                      {{ request.user.last_login|date:"d M Y,
+                      H:i"|default:"Belum pernah" }}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">📆</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-calendar-plus"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">Akun Dibuat</p>
-                    <p class="settings-detail-value">{{ request.user.date_joined|date:"d M Y" }}</p>
+                    <p class="settings-detail-value">
+                      {{ request.user.date_joined|date:"d M Y" }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -162,7 +270,9 @@
           <!-- INFO SISTEM -->
           <div class="settings-section">
             <div class="settings-section-header">
-              <div class="settings-section-icon">💻</div>
+              <div class="settings-section-icon">
+                <i class="fas fa-desktop"></i>
+              </div>
               <div>
                 <h3>Informasi Sistem</h3>
                 <p>Detail aplikasi verifikasi ijazah</p>
@@ -172,17 +282,23 @@
             <div class="settings-detail-list">
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">🏫</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-university"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">Aplikasi</p>
-                    <p class="settings-detail-value">REGMABA UNSRAT - Verifikasi Ijazah</p>
+                    <p class="settings-detail-value">
+                      REGMABA UNSRAT - Verifikasi Ijazah
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">🔖</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-tag"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">Versi</p>
                     <p class="settings-detail-value">1.0.0</p>
@@ -192,7 +308,9 @@
 
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">🧠</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-brain"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">OCR Engine</p>
                     <p class="settings-detail-value">PaddleOCR + Qwen AI</p>
@@ -202,16 +320,19 @@
 
               <div class="settings-detail-row">
                 <div class="settings-detail-left">
-                  <span class="settings-detail-icon">📊</span>
+                  <span class="settings-detail-icon"
+                    ><i class="fas fa-chart-bar"></i
+                  ></span>
                   <div>
                     <p class="settings-detail-label">Total Dokumen Diproses</p>
-                    <p class="settings-detail-value">{{ total|default:"0" }} dokumen</p>
+                    <p class="settings-detail-value">
+                      {{ total|default:"0" }} dokumen
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -220,36 +341,64 @@
     <div class="modal-overlay" id="modal">
       <div class="modal-box">
         <div class="modal-header">
-          <h2>Edit Profil</h2>
-          <button class="close-btn" onclick="closeModal()">✕</button>
+          <h2>
+            <i class="fas fa-user-edit" style="color: var(--color-primary)"></i>
+            Edit Profil
+          </h2>
+          <button class="close-btn" onclick="closeModal()">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
 
         <form method="POST">
           {% csrf_token %}
 
           <div class="input-group">
-            <label>Username</label>
-            <input type="text" name="username" value="{{ request.user.username }}" />
+            <label><i class="fas fa-user"></i> Username</label>
+            <input
+              type="text"
+              name="username"
+              value="{{ request.user.username }}"
+            />
           </div>
 
           <div class="input-group">
-            <label>Email</label>
+            <label><i class="fas fa-envelope"></i> Email</label>
             <input type="email" name="email" value="{{ request.user.email }}" />
           </div>
 
           <div class="input-group">
-            <label>Password Baru</label>
-            <input type="password" name="password" placeholder="Kosongkan jika tidak diubah" />
+            <label><i class="fas fa-lock"></i> Password Baru</label>
+            <input
+              type="password"
+              name="password"
+              placeholder="Kosongkan jika tidak diubah"
+            />
           </div>
 
           <div class="modal-action">
-            <button type="button" class="cancel-btn" onclick="closeModal()">Batal</button>
-            <button type="submit" class="save-btn">Simpan Perubahan</button>
+            <button type="button" class="cancel-btn" onclick="closeModal()">
+              <i class="fas fa-times"></i> Batal
+            </button>
+            <button type="submit" class="save-btn">
+              <i class="fas fa-save"></i> Simpan Perubahan
+            </button>
           </div>
         </form>
       </div>
     </div>
 
+    <!-- FOOTER -->
+    <footer class="admin-footer">
+      <div class="admin-footer-content">
+        <p>
+          <i class="fas fa-university"></i> REGMABA UNSRAT &mdash; Sistem
+          Verifikasi Tahun Ijazah &copy; 2026 Universitas Sam Ratulangi
+        </p>
+      </div>
+    </footer>
+
     <script src="{% static 'js/settings.js' %}"></script>
+    <script src="{% static 'js/sidebar.js' %}"></script>
   </body>
 </html>

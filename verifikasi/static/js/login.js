@@ -1,16 +1,13 @@
 function togglePassword() {
   const input = document.getElementById("password");
-  const eyeOpen = document.getElementById("eyeOpen");
-  const eyeClosed = document.getElementById("eyeClosed");
+  const icon = document.getElementById("eyeIcon");
 
   if (input.type === "password") {
     input.type = "text";
-    eyeOpen.style.display = "none";
-    eyeClosed.style.display = "block";
+    icon.className = "fas fa-eye-slash";
   } else {
     input.type = "password";
-    eyeOpen.style.display = "block";
-    eyeClosed.style.display = "none";
+    icon.className = "fas fa-eye";
   }
 }
 
@@ -21,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
   if (form && btn) {
     form.addEventListener("submit", function () {
       btn.disabled = true;
-      btn.innerHTML = '<span class="login-spinner"></span> Memproses...';
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
       btn.style.opacity = "0.7";
     });
   }

@@ -4,14 +4,13 @@
     <title>Masuk Admin - Verifikasi Ijazah</title>
     {% load static %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="{% static 'css/stylelogin.css' %}?v=10" />
+    <link rel="stylesheet" href="{% static 'css/stylelogin.css' %}?v=12" />
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   </head>
 
   <body>
     <main class="login-page">
-
-      <!-- KIRI: BRANDING -->
       <section class="login-left">
         <div class="login-left-content">
           <img src="{% static 'images/logo-unsrat2.png' %}" class="login-hero-logo" />
@@ -20,21 +19,21 @@
 
           <div class="login-features">
             <div class="login-feature-item">
-              <span>🔍</span>
+              <div class="login-feature-icon"><i class="fas fa-search"></i></div>
               <div>
                 <h4>OCR Otomatis</h4>
                 <p>Deteksi nama dan tahun ijazah secara otomatis menggunakan PaddleOCR dan AI</p>
               </div>
             </div>
             <div class="login-feature-item">
-              <span>📊</span>
+              <div class="login-feature-icon"><i class="fas fa-chart-bar"></i></div>
               <div>
                 <h4>Dashboard Admin</h4>
                 <p>Pantau dan verifikasi seluruh dokumen ijazah dalam satu dashboard</p>
               </div>
             </div>
             <div class="login-feature-item">
-              <span>📄</span>
+              <div class="login-feature-icon"><i class="fas fa-file-export"></i></div>
               <div>
                 <h4>Ekspor Laporan</h4>
                 <p>Unduh laporan verifikasi dalam format PDF dan Excel</p>
@@ -42,72 +41,55 @@
             </div>
           </div>
         </div>
-
-        <p class="login-left-footer">© 2026 Universitas Sam Ratulangi</p>
+        <p class="login-left-footer">&copy; 2026 Universitas Sam Ratulangi Manado</p>
       </section>
 
-      <!-- KANAN: FORM -->
       <section class="login-right">
         <div class="login-card">
           <div class="login-brand">
-            <div class="login-brand-icon">🔐</div>
+            <div class="login-brand-icon"><i class="fas fa-lock"></i></div>
             <h2>Masuk ke Panel Admin</h2>
             <p class="login-subtitle">Masukkan kredensial untuk mengakses dashboard</p>
           </div>
 
           {% if error %}
-          <div class="login-error">
-            <span>⚠️</span> {{ error }}
-          </div>
+          <div class="login-error"><i class="fas fa-exclamation-triangle"></i> {{ error }}</div>
           {% endif %}
 
           <form method="POST" class="login-form">
             {% csrf_token %}
-
             <div class="input-group">
               <label class="input-label">Nama Pengguna</label>
               <div class="input-wrapper">
-                <span class="input-icon">👤</span>
+                <i class="fas fa-user input-icon"></i>
                 <input type="text" name="username" required class="input-field" placeholder="Masukkan username" />
               </div>
             </div>
-
             <div class="input-group">
               <label class="input-label">Kata Sandi</label>
               <div class="input-wrapper">
-                <span class="input-icon">🔒</span>
+                <i class="fas fa-lock input-icon"></i>
                 <input id="password" type="password" name="password" required class="input-field" placeholder="Masukkan password" />
                 <button type="button" class="toggle-password" onclick="togglePassword()">
-                  <svg id="eyeOpen" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                  <svg id="eyeClosed" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:none">
-                    <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.77 21.77 0 0 1 5.06-6.94"/>
-                    <path d="M1 1l22 22"/>
-                  </svg>
+                  <i id="eyeIcon" class="fas fa-eye"></i>
                 </button>
               </div>
             </div>
-
             <div class="login-options">
-              <label class="remember-me">
-                <input type="checkbox" />
-                <span class="checkmark"></span>
-                Ingat saya
-              </label>
+              <label class="remember-me"><input type="checkbox" /> Ingat saya</label>
             </div>
-
-            <button type="submit" class="login-btn">
-              Masuk
-              <span class="login-btn-arrow">→</span>
-            </button>
+            <button type="submit" class="login-btn">Masuk <i class="fas fa-arrow-right login-btn-arrow"></i></button>
           </form>
         </div>
       </section>
-
     </main>
 
-    <script src="{% static 'js/login.js' %}"></script>
+    <footer class="admin-footer">
+      <div class="admin-footer-content">
+        <p><i class="fas fa-university"></i> REGMABA UNSRAT &mdash; Sistem Verifikasi Tahun Ijazah &copy; 2026 Universitas Sam Ratulangi</p>
+      </div>
+    </footer>
+
+    <script src="{% static 'js/login.js' %}?v=2"></script>
   </body>
 </html>

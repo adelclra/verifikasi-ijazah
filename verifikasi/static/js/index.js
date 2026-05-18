@@ -17,24 +17,16 @@ fileInput.addEventListener("change", function () {
     previewBox.style.display = "block";
 
     Array.from(fileInput.files).forEach((file) => {
-      let icon = "📁";
-
-      if (file.type.startsWith("image/")) {
-        icon = "🖼️";
-      } else if (file.type === "application/pdf") {
-        icon = "📄";
-      }
+      let iconClass = "fas fa-file";
+      if (file.type.startsWith("image/")) iconClass = "fas fa-file-image";
+      else if (file.type === "application/pdf") iconClass = "fas fa-file-pdf";
 
       const div = document.createElement("div");
       div.className = "file-card";
-
       div.innerHTML = `
-        <div class="file-icon">${icon}</div>
-        <div class="file-info">
-          <p class="file-name">${file.name}</p>
-        </div>
+        <div class="file-icon"><i class="${iconClass}"></i></div>
+        <div class="file-info"><p class="file-name">${file.name}</p></div>
       `;
-
       fileList.appendChild(div);
     });
   }
@@ -44,9 +36,7 @@ function getCSRFToken() {
   const cookies = document.cookie.split(";");
   for (let c of cookies) {
     c = c.trim();
-    if (c.startsWith("csrftoken=")) {
-      return c.substring("csrftoken=".length);
-    }
+    if (c.startsWith("csrftoken=")) return c.substring("csrftoken=".length);
   }
   const input = document.querySelector("[name=csrfmiddlewaretoken]");
   return input ? input.value : "";
@@ -72,21 +62,19 @@ verificationForm.addEventListener("submit", async function (e) {
 
   const submitBtn = verificationForm.querySelector("button[type='submit']");
   submitBtn.disabled = true;
-  submitBtn.textContent = "Sedang memproses...";
-  submitBtn.style.opacity = "0.6";
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sedang memproses...';
 
   for (let i = 0; i < totalFiles; i++) {
     const file = files[i];
-
     progressText.textContent = `Memproses: ${file.name}`;
 
     const loadingCard = document.createElement("div");
     loadingCard.className = "file-card";
     loadingCard.innerHTML = `
-      <div class="file-icon">⏳</div>
+      <div class="file-icon"><i class="fas fa-spinner fa-spin"></i></div>
       <div class="file-info">
         <p class="file-name">${file.name}</p>
-        <p style="color: var(--color-primary); font-size: 13px;">Sedang diproses...</p>
+        <p style="color: var(--color-primary); font-size: 12px;">Sedang diproses...</p>
       </div>
     `;
     resultsContainer.appendChild(loadingCard);
@@ -97,35 +85,32 @@ verificationForm.addEventListener("submit", async function (e) {
 
       const response = await fetch("/upload-single/", {
         method: "POST",
-        headers: {
-          "X-CSRFToken": csrfToken,
-        },
+        headers: { "X-CSRFToken": csrfToken },
         body: formData,
       });
 
       const data = await response.json();
 
-      let icon = "📁";
-      if (data.is_image) icon = "🖼️";
-      else if (data.is_pdf) icon = "📄";
+      let iconClass = "fas fa-file";
+      if (data.is_image) iconClass = "fas fa-file-image";
+      else if (data.is_pdf) iconClass = "fas fa-file-pdf";
 
       loadingCard.innerHTML = `
-        <div class="file-icon">${icon}</div>
+        <div class="file-icon"><i class="${iconClass}"></i></div>
         <div class="file-info">
           <p class="file-name">${data.nama}</p>
           <p>Tahun: ${data.tahun}</p>
         </div>
         <div class="file-action">
-          ${data.file_url ? `<a href="${data.file_url}" target="_blank" class="btn-view">Lihat</a>` : ""}
+          ${data.file_url ? `<a href="${data.file_url}" target="_blank" class="btn-view"><i class="fas fa-eye"></i> Lihat</a>` : ""}
         </div>
       `;
-
     } catch (err) {
       loadingCard.innerHTML = `
-        <div class="file-icon">❌</div>
+        <div class="file-icon" style="color: var(--color-error);"><i class="fas fa-times-circle"></i></div>
         <div class="file-info">
           <p class="file-name">${file.name}</p>
-          <p style="color: var(--color-error); font-size: 13px;">Gagal memproses file</p>
+          <p style="color: var(--color-error); font-size: 12px;">Gagal memproses file</p>
         </div>
       `;
     }
@@ -141,11 +126,10 @@ verificationForm.addEventListener("submit", async function (e) {
   const resetBtn = document.createElement("a");
   resetBtn.className = "btn btn-primary";
   resetBtn.href = "?reset=1";
-  resetBtn.textContent = "Unggah Lagi";
+  resetBtn.innerHTML = '<i class="fas fa-redo"></i> Unggah Lagi';
   resetBtn.style.marginTop = "10px";
   resultsContainer.appendChild(resetBtn);
 
   submitBtn.disabled = false;
-  submitBtn.textContent = "Unggah & Verifikasi";
-  submitBtn.style.opacity = "1";
+  submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Unggah & Verifikasi';
 });

@@ -2,21 +2,20 @@
 <html>
   <head>
     <title>REGMABA UNSRAT - Verifikasi Ijazah</title>
-
     {% load static %}
-
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=6" />
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   </head>
 
   <body>
-    <!-- NAVIGASI -->
     <nav class="navbar">
       <div class="nav-content">
         <div class="nav-left">
           <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
           <div class="nav-text">
-            <h2>REGMABA UNSRAT - Verifikasi Ijazah</h2>
+            <h2>REGMABA UNSRAT</h2>
+            <span>Sistem Verifikasi Tahun Ijazah</span>
           </div>
         </div>
       </div>
@@ -24,81 +23,59 @@
 
     <div class="main-wrapper">
       <main class="main-content">
-        <!-- BAGIAN ATAS -->
         <div class="page-header">
-          <h1>Dashboard Verifikasi</h1>
-          <p>Unggah ijazah untuk proses verifikasi oleh admin</p>
+          <h1><i class="fas fa-file-upload"></i> Unggah Dokumen Ijazah</h1>
+          <p>Unggah berkas ijazah untuk proses verifikasi tahun kelulusan</p>
         </div>
 
         <div class="content-grid">
-          <!-- ================= UNGGAH ================= -->
           <div class="card upload-card">
             <div class="card-header">
-              <h3>Unggah Berkas</h3>
+              <h3><i class="fas fa-cloud-upload-alt"></i> Unggah Berkas</h3>
             </div>
-
             <div class="card-body">
-              <!-- FORMULIR -->
-              <form
-                id="verification-form"
-                method="POST"
-                enctype="multipart/form-data"
-              >
+              <form id="verification-form" method="POST" enctype="multipart/form-data">
                 {% csrf_token %}
-
-                <!-- INPUT BERKAS -->
                 <div class="file-input-wrapper">
-                  <input
-                    id="ijazah-file"
-                    type="file"
-                    name="ijazah"
-                    multiple
-                    required
-                    class="file-input"
-                  />
-
+                  <input id="ijazah-file" type="file" name="ijazah" multiple required class="file-input" />
                   <label for="ijazah-file" class="file-input-label">
-                    <span class="file-input-icon">📄</span>
-                    <span>Klik untuk pilih satu / banyak file</span>
+                    <i class="fas fa-folder-open file-input-icon"></i>
+                    <span class="file-input-text">Klik untuk pilih satu / banyak file</span>
+                    <span class="file-input-hint">Format: JPG, JPEG, PNG, PDF (Maks. 10MB)</span>
                   </label>
                 </div>
 
-                <div
-                  id="selected-file-preview"
-                  class="uploaded-file-box selected-file-preview"
-                  style="display: none"
-                >
-                  <p class="uploaded-title">File yang dipilih</p>
+                <div id="selected-file-preview" class="uploaded-file-box selected-file-preview" style="display: none">
+                  <p class="uploaded-title"><i class="fas fa-paperclip"></i> File yang dipilih</p>
                   <div id="file-list"></div>
                 </div>
 
                 <button type="submit" class="btn btn-primary">
-                  Unggah & Verifikasi
+                  <i class="fas fa-paper-plane"></i> Unggah & Verifikasi
                 </button>
               </form>
             </div>
           </div>
 
-          <!-- ================= HASIL ================= -->
           <div class="card upload-card">
             <div class="card-header">
-              <h3>Hasil Unggah</h3>
+              <h3><i class="fas fa-clipboard-check"></i> Hasil Unggah</h3>
             </div>
-
             <div class="card-body">
               <div id="upload-progress" style="display: none; margin-bottom: 15px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
-                  <span id="progress-text" style="font-size: 14px; color: var(--color-text-light);">Memproses...</span>
-                  <span id="progress-count" style="font-size: 14px; font-weight: 600; color: var(--color-primary);"></span>
+                  <span id="progress-text" style="font-size: 14px; color: #7f8c8d;">Memproses...</span>
+                  <span id="progress-count" style="font-size: 14px; font-weight: 600; color: #10b8cc;"></span>
                 </div>
-                <div style="width: 100%; height: 8px; background: #e0e6ed; border-radius: 4px; overflow: hidden;">
-                  <div id="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark)); border-radius: 4px; transition: width 0.4s ease;"></div>
+                <div class="progress-track">
+                  <div id="progress-bar" class="progress-fill"></div>
                 </div>
               </div>
 
               <div id="results-container" class="uploaded-file-box" style="display: none;"></div>
 
               <div id="empty-message" class="verification-box default">
+                <i class="fas fa-inbox empty-icon"></i>
                 <p>Belum ada dokumen yang diunggah.</p>
               </div>
             </div>
@@ -106,7 +83,13 @@
         </div>
       </main>
     </div>
-    <!-- SCRIPT -->
-    <script src="{% static 'js/index.js' %}?v=2"></script>
+
+    <footer class="admin-footer">
+      <div class="admin-footer-content">
+        <p><i class="fas fa-university"></i> REGMABA UNSRAT &mdash; Sistem Verifikasi Tahun Ijazah &copy; 2026 Universitas Sam Ratulangi</p>
+      </div>
+    </footer>
+
+    <script src="{% static 'js/index.js' %}?v=5"></script>
   </body>
 </html>

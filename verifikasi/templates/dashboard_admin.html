@@ -4,107 +4,250 @@
     <title>Dashboard Admin - Verifikasi Ijazah</title>
     {% load static %}
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
-    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=22" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=35" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
   </head>
 
   <body>
     <nav class="navbar">
       <div class="nav-content">
+        <div class="nav-right">
+          <div class="menu-toggle">
+            <button
+              class="sidebar-toggle"
+              id="sidebarToggle"
+              onclick="toggleSidebar()"
+              aria-label="Toggle sidebar"
+            >
+              <i class="fas fa-bars"></i>
+            </button>
+            <span class="menu-label">Menu</span>
+          </div>
+        </div>
         <div class="nav-left">
           <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
-          <div class="nav-text"><h2>REGMABA UNSRAT - Verifikasi Ijazah</h2></div>
+          <div class="nav-text"><h2>REGMABA UNSRAT</h2></div>
         </div>
       </div>
     </nav>
 
+    <div
+      class="sidebar-overlay"
+      id="sidebarOverlay"
+      onclick="toggleSidebar()"
+    ></div>
+
     <div class="container">
-      <!-- SIDEBAR -->
       <div class="sidebar">
         <div class="sidebar-profile">
-          <div class="sidebar-avatar">{{ request.user.username|make_list|first|upper }}</div>
+          <div class="sidebar-avatar">
+            {{ request.user.username|make_list|first|upper }}
+          </div>
           <div class="sidebar-profile-info">
-            <p class="sidebar-profile-name">{{ request.user.get_full_name|default:request.user.username }}</p>
-            <p class="sidebar-profile-role">{% if request.user.is_superuser %}Super Admin{% else %}Admin{% endif %}</p>
+            <p class="sidebar-profile-name">
+              {{ request.user.get_full_name|default:request.user.username }}
+            </p>
+            <p class="sidebar-profile-role">
+              {% if request.user.is_superuser %} Super Admin {% else %} Admin
+              {%endif %}
+            </p>
           </div>
         </div>
-
         <p class="sidebar-label">Menu Utama</p>
-        <a href="{% url 'dashboard_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}"><span>📊</span> Dashboard</a>
-        <a href="{% url 'reports_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'reports_admin' %}active{% endif %}"><span>📈</span> Laporan</a>
-
+        <a
+          href="{% url 'dashboard_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}"
+          ><i class="fas fa-chart-pie"></i> Dashboard</a
+        >
+        <a
+          href="{% url 'reports_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'reports_admin' %}active{% endif %}"
+          ><i class="fas fa-chart-line"></i> Laporan</a
+        >
         <p class="sidebar-label">Kelola</p>
-        <a href="{% url 'home' %}" class="menu-item" target="_blank"><span>📤</span> Halaman Unggah</a>
-        <a href="{% url 'settings_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"><span>⚙️</span> Pengaturan</a>
-
+        <a href="{% url 'home' %}" class="menu-item" target="_blank"
+          ><i class="fas fa-upload"></i> Halaman Unggah</a
+        >
+        <a
+          href="{% url 'settings_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"
+          ><i class="fas fa-cog"></i> Pengaturan</a
+        >
         <div class="sidebar-footer">
           <div class="sidebar-stats">
-            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ total|default:"0" }}</span><span class="sidebar-stat-label">Dokumen</span></div>
-            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ valid|default:"0" }}</span><span class="sidebar-stat-label">Valid</span></div>
-            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ pending|default:"0" }}</span><span class="sidebar-stat-label">Menunggu</span></div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ total|default:"0" }}</span
+              ><span class="sidebar-stat-label">Dokumen</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ valid|default:"0" }}</span
+              ><span class="sidebar-stat-label">Valid</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ pending|default:"0" }}</span
+              ><span class="sidebar-stat-label">Menunggu</span>
+            </div>
           </div>
-          <a href="{% url 'logout' %}" class="sidebar-logout"><span>🚪</span> Keluar</a>
+          <a href="{% url 'logout' %}" class="sidebar-logout"
+            ><i class="fas fa-sign-out-alt"></i> Keluar</a
+          >
         </div>
       </div>
 
-      <!-- MAIN -->
       <div class="main">
         <div class="hero">
-          <h2>Halo, Admin 👋</h2>
+          <h2>Halo, Admin</h2>
           <p>Selamat datang kembali!</p>
         </div>
 
-        <!-- STATS -->
         <div class="stats">
-          <div class="card"><p>Total</p><h3>{{ total }}</h3></div>
-          <div class="card"><p>Valid</p><h3 class="text-success">{{ valid }}</h3></div>
-          <div class="card"><p>Tidak Memenuhi Syarat</p><h3 class="text-error">{{ not_valid }}</h3></div>
-          <div class="card"><p>Tidak Terdeteksi</p><h3 class="text-warning">{{ unknown_year }}</h3></div>
-          <div class="card"><p>Menunggu</p><h3 class="text-info">{{ pending }}</h3></div>
-          <div class="card"><p>Hari Ini</p><h3>{{ today }}</h3></div>
+          <div class="card">
+            <p><i class="fas fa-folder"></i> Total</p>
+            <h3>{{ total }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-check-circle"></i> Valid</p>
+            <h3 class="text-success">{{ valid }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-times-circle"></i> Tidak Memenuhi Syarat</p>
+            <h3 class="text-error">{{ not_valid }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-question-circle"></i> Tidak Terdeteksi</p>
+            <h3 class="text-warning">{{ unknown_year }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-clock"></i> Menunggu</p>
+            <h3 class="text-info">{{ pending }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-calendar-day"></i> Hari Ini</p>
+            <h3>{{ today }}</h3>
+          </div>
         </div>
 
         <div class="stats">
-          <div class="card"><p>CER Rata-rata</p><h3>{{ avg_cer }}%</h3></div>
-          <div class="card"><p>WER Rata-rata</p><h3>{{ avg_wer }}%</h3></div>
-          <div class="card"><p>Akurasi CER</p><h3 class="text-success">{{ akurasi_cer }}%</h3></div>
-          <div class="card"><p>Akurasi WER</p><h3 class="text-success">{{ akurasi_wer }}%</h3></div>
+          <div class="card">
+            <p><i class="fas fa-font"></i> CER Rata-rata</p>
+            <h3>{{ avg_cer }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-align-left"></i> WER Rata-rata</p>
+            <h3>{{ avg_wer }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-spell-check"></i> Akurasi CER</p>
+            <h3 class="text-success">{{ akurasi_cer }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-check-double"></i> Akurasi WER</p>
+            <h3 class="text-success">{{ akurasi_wer }}%</h3>
+          </div>
         </div>
 
-        <!-- FILTER -->
         <form method="get" class="table-controls">
-          <input type="text" name="search" placeholder="Cari" value="{{ search }}" />
+          <input
+            type="text"
+            name="search"
+            placeholder="Cari"
+            value="{{ search }}"
+          />
           <select name="status">
             <option value="">Semua Status</option>
-            <option value="VALID" {% if status == "VALID" %}selected{% endif %}>Valid</option>
-            <option value="MENUNGGU" {% if status == "MENUNGGU" %}selected{% endif %}>Menunggu</option>
-            <option value="TIDAK TERDETEKSI" {% if status == "TIDAK TERDETEKSI" %}selected{% endif %}>Tidak Terdeteksi</option>
-            <option value="TIDAK MEMENUHI SYARAT" {% if status == "TIDAK MEMENUHI SYARAT" %}selected{% endif %}>Tidak Memenuhi Syarat</option>
+            <option
+              value="VALID"
+              {%
+              if
+              status=""
+              ="VALID"
+              %}selected{%
+              endif
+              %}
+            >
+              Valid
+            </option>
+            <option
+              value="MENUNGGU"
+              {%
+              if
+              status=""
+              ="MENUNGGU"
+              %}selected{%
+              endif
+              %}
+            >
+              Menunggu
+            </option>
+            <option
+              value="TIDAK TERDETEKSI"
+              {%
+              if
+              status=""
+              ="TIDAK TERDETEKSI"
+              %}selected{%
+              endif
+              %}
+            >
+              Tidak Terdeteksi
+            </option>
+            <option
+              value="TIDAK MEMENUHI SYARAT"
+              {%
+              if
+              status=""
+              ="TIDAK MEMENUHI SYARAT"
+              %}selected{%
+              endif
+              %}
+            >
+              Tidak Memenuhi Syarat
+            </option>
           </select>
-          <button type="submit" class="btn-view">🔍</button>
+          <button type="submit" class="btn-view">
+            <i class="fas fa-search"></i>
+          </button>
         </form>
 
-        <!-- PAGINASI -->
         <div class="pagination">
           {% if data.has_previous %}
-          <a href="?page=1&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">&laquo;</a>
-          <a href="?page={{ data.previous_page_number }}&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">Sebelumnya</a>
-          {% endif %}
-          {% for num in data.paginator.page_range %}
-          {% if num >= data.number|add:'-2' and num <= data.number|add:'2' %}
+          <a
+            href="?page=1&amp;search={{ search }}&amp;status={{ status }}"
+            class="page-btn"
+            >&laquo;</a
+          >
+          <a
+            href="?page={{ data.previous_page_number }}&amp;search={{ search }}&amp;status={{ status }}"
+            class="page-btn"
+            >Sebelumnya</a
+          >
+          {% endif %} {% for num in data.paginator.page_range %} 
+          {% if num >= data.number|add:'-2' and num <= data.number|add:'2' %} 
           {% if data.number == num %}
           <span class="page-btn active">{{ num }}</span>
           {% else %}
-          <a href="?page={{ num }}&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">{{ num }}</a>
-          {% endif %}
-          {% endif %}
-          {% endfor %}
-          {% if data.has_next %}
-          <a href="?page={{ data.next_page_number }}&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">Berikutnya</a>
-          <a href="?page={{ data.paginator.num_pages }}&amp;search={{ search }}&amp;status={{ status }}" class="page-btn">&raquo;</a>
+          <a
+            href="?page={{ num }}&amp;search={{ search }}&amp;status={{ status }}"
+            class="page-btn"
+            >{{ num }}</a
+          >
+          {% endif %} {% endif %} {% endfor %} {% if data.has_next %}
+          <a
+            href="?page={{ data.next_page_number }}&amp;search={{ search }}&amp;status={{ status }}"
+            class="page-btn"
+            >Berikutnya</a
+          >
+          <a
+            href="?page={{ data.paginator.num_pages }}&amp;search={{ search }}&amp;status={{ status }}"
+            class="page-btn"
+            >&raquo;</a
+          >
           {% endif %}
         </div>
 
-        <!-- TABEL -->
         <table>
           <tr>
             <th>No</th>
@@ -124,27 +267,104 @@
             <td>{{ forloop.counter0|add:data.start_index }}</td>
             <td>{{ item.nama }}</td>
             <td>{{ item.extracted_year|default:"-" }}</td>
-            <td>{% if item.cer != None %}{{ item.cer|floatformat:2 }}%{% else %}-{% endif %}</td>
-            <td>{% if item.wer != None %}{{ item.wer|floatformat:2 }}%{% else %}-{% endif %}</td>
-            <td class="check-cell">{% if item.hasil_benar %}✓{% else %}✗{% endif %}</td>
-            <td class="check-cell">{% if item.tidak_terbaca %}✓{% else %}✗{% endif %}</td>
-            <td class="check-cell">{% if item.salah_tahun %}✓{% else %}✗{% endif %}</td>
             <td>
-              {% if item.status == "VALID" %}<span class="badge badge-success">VALID</span>
-              {% elif item.status == "TIDAK MEMENUHI SYARAT" %}<span class="badge badge-error">TIDAK VALID</span>
-              {% elif item.status == "MENUNGGU VERIFIKASI" %}<span class="badge badge-info">MENUNGGU</span>
-              {% else %}<span class="badge badge-warning">TIDAK TERDETEKSI</span>{% endif %}
+              {% if item.cer != None %}
+              {{ item.cer|floatformat:2 }}
+              %
+              {% else%}
+              -
+              {% endif %}
+            </td>
+            <td>
+              {% if item.wer != None %}
+              {{ item.wer|floatformat:2 }}
+              %
+              {% else%}
+              -
+              {% endif %}
+            </td>
+            <td class="check-cell">
+              {% if item.hasil_benar %}<i
+                class="fas fa-check"
+                style="color: var(--color-success)"
+              ></i
+              >{% else %}<i
+                class="fas fa-times"
+                style="color: var(--color-error)"
+              ></i
+              >{% endif %}
+            </td>
+            <td class="check-cell">
+              {% if item.tidak_terbaca %}<i
+                class="fas fa-check"
+                style="color: var(--color-success)"
+              ></i
+              >{% else %}<i
+                class="fas fa-times"
+                style="color: var(--color-error)"
+              ></i
+              >{% endif %}
+            </td>
+            <td class="check-cell">
+              {% if item.salah_tahun %}<i
+                class="fas fa-check"
+                style="color: var(--color-success)"
+              ></i
+              >{% else %}<i
+                class="fas fa-times"
+                style="color: var(--color-error)"
+              ></i
+              >{% endif %}
+            </td>
+            <td>
+              {% if item.status == "VALID" %}<span class="badge badge-success"
+                >VALID</span
+              >
+              {% elif item.status == "TIDAK MEMENUHI SYARAT" %}<span
+                class="badge badge-error"
+                >TIDAK VALID</span
+              >
+              {% elif item.status == "MENUNGGU VERIFIKASI" %}<span
+                class="badge badge-info"
+                >MENUNGGU</span
+              >
+              {% else %}<span class="badge badge-warning">TIDAK TERDETEKSI</span
+              >{% endif %}
             </td>
             <td>{{ item.created_at|date:"Y-m-d H:i" }}</td>
             <td class="action-buttons">
-              <a href="{% url 'view_document' item.id %}" class="btn-view">Lihat</a>
-              <button type="button" class="btn-edit" onclick="openEditModal('{{ item.id }}', '{{ item.nama|escapejs }}', '{{ item.extracted_year|escapejs }}')">Edit</button>
-              <a href="{% url 'verifikasi_valid' item.id %}" class="btn-valid">Valid</a>
-              <a href="{% url 'verifikasi_tidak_sesuai' item.id %}" class="btn-reject">Tolak</a>
+              <a href="{% url 'view_document' item.id %}" class="btn-view"
+                ><i class="fas fa-eye"></i> Lihat</a
+              >
+              <button
+                type="button"
+                class="btn-edit"
+                onclick="openEditModal('{{ item.id }}', '{{ item.nama|escapejs }}', '{{ item.extracted_year|escapejs }}')"
+              >
+                <i class="fas fa-pen"></i> Edit
+              </button>
+              <a href="{% url 'verifikasi_valid' item.id %}" class="btn-valid"
+                ><i class="fas fa-check"></i> Valid</a
+              >
+              <a
+                href="{% url 'verifikasi_tidak_sesuai' item.id %}"
+                class="btn-reject"
+                ><i class="fas fa-times"></i> Tolak</a
+              >
               {% if item.status == "VALID" %}
-              <a href="{% url 'verifikasi_tidak_sesuai' item.id %}" class="btn-reject" onclick="return confirm('Batalkan status VALID?');">Batalkan</a>
+              <a
+                href="{% url 'verifikasi_tidak_sesuai' item.id %}"
+                class="btn-reject"
+                onclick="return confirm('Batalkan status VALID?');"
+                ><i class="fas fa-undo"></i> Batalkan</a
+              >
               {% elif item.status == "TIDAK MEMENUHI SYARAT" %}
-              <a href="{% url 'verifikasi_valid' item.id %}" class="btn-approve" onclick="return confirm('Perbaiki menjadi VALID?');">Perbaiki</a>
+              <a
+                href="{% url 'verifikasi_valid' item.id %}"
+                class="btn-approve"
+                onclick="return confirm('Perbaiki menjadi VALID?');"
+                ><i class="fas fa-redo"></i> Perbaiki</a
+              >
               {% endif %}
             </td>
           </tr>
@@ -153,26 +373,60 @@
       </div>
     </div>
 
-    <!-- MODAL EDIT -->
     <div class="modal-overlay" id="editModal">
       <div class="modal-box">
         <div class="modal-header">
-          <h2>Edit Data</h2>
-          <button onclick="closeEditModal()" class="close-btn">✕</button>
+          <h2>
+            <i class="fas fa-edit" style="color: var(--color-primary)"></i> Edit
+            Data
+          </h2>
+          <button onclick="closeEditModal()" class="close-btn">
+            <i class="fas fa-times"></i>
+          </button>
         </div>
         <form method="POST" action="{% url 'edit_verifikasi' %}">
           {% csrf_token %}
           <input type="hidden" name="id" id="edit-id" />
-          <div class="input-group"><label>Nama</label><input type="text" name="nama" id="edit-nama" required /></div>
-          <div class="input-group"><label>Tahun</label><input type="text" name="tahun" id="edit-tahun" required /></div>
+          <div class="input-group">
+            <label><i class="fas fa-user"></i> Nama</label
+            ><input type="text" name="nama" id="edit-nama" required />
+          </div>
+          <div class="input-group">
+            <label><i class="fas fa-calendar"></i> Tahun</label
+            ><input type="text" name="tahun" id="edit-tahun" required />
+          </div>
           <div class="modal-action">
-            <button type="button" class="cancel-btn" onclick="closeEditModal()">Batal</button>
-            <button type="submit" class="save-btn">Simpan</button>
+            <button type="button" class="cancel-btn" onclick="closeEditModal()">
+              <i class="fas fa-times"></i> Batal
+            </button>
+            <button type="submit" class="save-btn">
+              <i class="fas fa-save"></i> Simpan
+            </button>
           </div>
         </form>
       </div>
     </div>
 
-    <script src="{% static 'js/dashboard.js' %}?v=4"></script>
+    <footer class="admin-footer">
+      <div class="admin-footer-content">
+        <p>
+          <i class="fas fa-university"></i> REGMABA UNSRAT &mdash; Sistem
+          Verifikasi Tahun Ijazah &copy; 2026 Universitas Sam Ratulangi
+        </p>
+      </div>
+    </footer>
+
+    <script src="{% static 'js/dashboard.js' %}?v=6"></script>
+    <script>
+      function toggleSidebar() {
+        var sidebar = document.querySelector(".sidebar");
+        var overlay = document.getElementById("sidebarOverlay");
+        sidebar.classList.toggle("open");
+        overlay.classList.toggle("active");
+        document.body.style.overflow = sidebar.classList.contains("open")
+          ? "hidden"
+          : "";
+      }
+    </script>
   </body>
 </html>
