@@ -1,0 +1,218 @@
+{% load static %}
+<!doctype html>
+<html>
+  <head>
+    <title>Kelola User - Verifikasi Ijazah</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=35" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  </head>
+
+  <body>
+    <nav class="navbar">
+      <div class="nav-content">
+        <div class="nav-right">
+          <div class="menu-toggle">
+            <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+              <i class="fas fa-bars"></i>
+            </button>
+            <span class="menu-label">Menu</span>
+          </div>
+        </div>
+        <div class="nav-left">
+          <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
+          <div class="nav-text"><h2>REGMABA UNSRAT</h2></div>
+        </div>
+      </div>
+    </nav>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+    <div class="container">
+      <div class="sidebar">
+        <div class="sidebar-profile">
+          <div class="sidebar-avatar">{{ request.user.username|make_list|first|upper }}</div>
+          <div class="sidebar-profile-info">
+            <p class="sidebar-profile-name">{{ request.user.get_full_name|default:request.user.username }}</p>
+            <p class="sidebar-profile-role">{% if request.user.is_superuser %}Super Admin{% else %}Admin{% endif %}</p>
+          </div>
+        </div>
+        <p class="sidebar-label">Menu Utama</p>
+        <a href="{% url 'dashboard_admin' %}" class="menu-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        <a href="{% url 'reports_admin' %}" class="menu-item"><i class="fas fa-chart-line"></i> Laporan</a>
+        <p class="sidebar-label">Kelola</p>
+        <a href="{% url 'home' %}" class="menu-item"><i class="fas fa-upload"></i> Halaman Unggah</a>
+        <a href="{% url 'settings_admin' %}" class="menu-item"><i class="fas fa-cog"></i> Pengaturan</a>
+        {% if request.user.is_superuser %}
+        <a href="{% url 'manage_users' %}" class="menu-item active"><i class="fas fa-users-cog"></i> Kelola User</a>
+        {% endif %}
+        <div class="sidebar-footer">
+          <div class="sidebar-stats">
+            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ total|default:"0" }}</span><span class="sidebar-stat-label">Dokumen</span></div>
+            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ valid|default:"0" }}</span><span class="sidebar-stat-label">Valid</span></div>
+            <div class="sidebar-stat-item"><span class="sidebar-stat-value">{{ pending|default:"0" }}</span><span class="sidebar-stat-label">Menunggu</span></div>
+          </div>
+          <a href="{% url 'logout' %}" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Keluar</a>
+        </div>
+      </div>
+
+      <div class="main">
+        <h2><i class="fas fa-users-cog" style="color: var(--color-primary);"></i> Kelola User</h2>
+        <p class="section-subtitle">Tambah, edit, atau hapus akun operator dan admin</p>
+
+        {% if error %}
+        <div class="alert alert-error"><i class="fas fa-exclamation-triangle"></i> {{ error }}</div>
+        {% endif %}
+
+        {% if success %}
+        <div class="alert alert-success"><i class="fas fa-check-circle"></i> {{ success }}</div>
+        {% endif %}
+
+        <div style="margin-bottom: 16px;">
+          <button class="btn-view" onclick="openAddModal()" style="padding: 10px 20px; font-size: 13px;">
+            <i class="fas fa-user-plus"></i> Tambah User Baru
+          </button>
+        </div>
+
+        <div class="card section-card">
+          <div class="card-header">
+            <h3><i class="fas fa-users"></i> Daftar User</h3>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table>
+              <tr>
+                <th>No</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Terakhir Login</th>
+                <th>Tanggal Dibuat</th>
+                <th>Aksi</th>
+              </tr>
+              {% for user in users %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                  <strong>{{ user.username }}</strong>
+                  {% if user.id == request.user.id %}
+                  <span class="badge badge-info" style="margin-left: 4px;">Anda</span>
+                  {% endif %}
+                </td>
+                <td>{{ user.email|default:"-" }}</td>
+                <td>
+                  {% if user.is_superuser %}
+                  <span class="badge badge-warning">Super Admin</span>
+                  {% else %}
+                  <span class="badge badge-info">Operator</span>
+                  {% endif %}
+                </td>
+                <td>{{ user.last_login|date:"d M Y, H:i"|default:"Belum pernah" }}</td>
+                <td>{{ user.date_joined|date:"d M Y" }}</td>
+                <td class="action-buttons">
+                  <button type="button" class="btn-edit" onclick="openEditModal('{{ user.id }}', '{{ user.username|escapejs }}', '{{ user.email|escapejs }}', '{% if user.is_superuser %}superadmin{% else %}operator{% endif %}')">
+                    <i class="fas fa-pen"></i> Edit
+                  </button>
+                  {% if user.id != request.user.id %}
+                  <a href="{% url 'delete_user' user.id %}" class="btn-reject" onclick="return confirm('Hapus user {{ user.username }}? Tindakan ini tidak bisa dibatalkan.');">
+                    <i class="fas fa-trash"></i> Hapus
+                  </a>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" style="padding: 30px; color: var(--color-text-light);">Belum ada user.</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL TAMBAH -->
+    <div class="modal-overlay" id="addModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2><i class="fas fa-user-plus" style="color: var(--color-primary);"></i> Tambah User</h2>
+          <button class="close-btn" onclick="closeAddModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="POST" action="{% url 'add_user' %}">
+          {% csrf_token %}
+          <div class="input-group">
+            <label><i class="fas fa-user"></i> Username</label>
+            <input type="text" name="username" required placeholder="Masukkan username" />
+          </div>
+          <div class="input-group">
+            <label><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" name="email" placeholder="Masukkan email (opsional)" />
+          </div>
+          <div class="input-group">
+            <label><i class="fas fa-lock"></i> Password</label>
+            <input type="password" name="password" required placeholder="Masukkan password" />
+          </div>
+          <div class="input-group">
+            <label><i class="fas fa-shield-alt"></i> Role</label>
+            <select name="role">
+              <option value="operator">Operator</option>
+              <option value="superadmin">Super Admin</option>
+            </select>
+          </div>
+          <div class="modal-action">
+            <button type="button" class="cancel-btn" onclick="closeAddModal()"><i class="fas fa-times"></i> Batal</button>
+            <button type="submit" class="save-btn"><i class="fas fa-save"></i> Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL EDIT -->
+    <div class="modal-overlay" id="editModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h2><i class="fas fa-user-edit" style="color: var(--color-primary);"></i> Edit User</h2>
+          <button class="close-btn" onclick="closeEditModal()"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="POST" id="editForm">
+          {% csrf_token %}
+          <div class="input-group">
+            <label><i class="fas fa-user"></i> Username</label>
+            <input type="text" name="username" id="edit-username" required />
+          </div>
+          <div class="input-group">
+            <label><i class="fas fa-envelope"></i> Email</label>
+            <input type="email" name="email" id="edit-email" />
+          </div>
+          <div class="input-group">
+            <label><i class="fas fa-lock"></i> Password Baru</label>
+            <input type="password" name="password" placeholder="Kosongkan jika tidak diubah" />
+          </div>
+          <div class="input-group">
+            <label><i class="fas fa-shield-alt"></i> Role</label>
+            <select name="role" id="edit-role">
+              <option value="operator">Operator</option>
+              <option value="superadmin">Super Admin</option>
+            </select>
+          </div>
+          <div class="modal-action">
+            <button type="button" class="cancel-btn" onclick="closeEditModal()"><i class="fas fa-times"></i> Batal</button>
+            <button type="submit" class="save-btn"><i class="fas fa-save"></i> Simpan</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <footer class="admin-footer">
+      <div class="admin-footer-content">
+        <p><i class="fas fa-university"></i> REGMABA UNSRAT &mdash; Sistem Verifikasi Tahun Ijazah &copy; 2026 Universitas Sam Ratulangi</p>
+      </div>
+    </footer>
+
+    <script src="{% static 'js/sidebar.js' %}"></script>
+    <script src="{% static 'js/manage_users.js' %}"></script>
+    {% if show_add_modal %}
+    <script>openAddModal();</script>
+    {% endif %}
+  </body>
+</html>

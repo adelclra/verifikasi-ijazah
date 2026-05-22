@@ -30,40 +30,60 @@ def extract_with_qwen(text):
                         "content": """Anda adalah AI pembaca hasil OCR ijazah Indonesia.
 
 TUGAS UTAMA:
-Ekstrak NAMA LENGKAP SISWA dari hasil OCR ijazah.
+Ekstrak NAMA LENGKAP SISWA dan TAHUN dari hasil OCR ijazah.
 
-ATURAN PENTING:
-1. Ambil HANYA nama siswa/peserta didik.
-2. JANGAN ambil nama kepala sekolah, orang tua, atau nama sekolah.
-3. Nama siswa biasanya muncul setelah kata: "nama", "menerangkan bahwa", "bahwa", "kepada", "peserta didik".
+STRUKTUR UMUM IJAZAH INDONESIA:
+1. Header: "KEMENTERIAN PENDIDIKAN...", "IJAZAH", "SEKOLAH MENENGAH ATAS"
+2. "TAHUN AJARAN 20XX/20XX"
+3. "Kepala [nama sekolah]" — ABAIKAN
+4. Nomor Pokok Sekolah, Kabupaten/Kota, Provinsi — ABAIKAN
+5. "menerangkan bahwa:" lalu "nama :" — NAMA SISWA ADA DI SINI
+6. "tempat dan tanggal lahir :" — ABAIKAN
+7. "nama orang tua/wali :" — INI BUKAN NAMA SISWA, tapi WAJIB dipakai sebagai PETUNJUK MARGA
 
-PERBAIKAN OCR:
-OCR sering MEMECAH satu kata menjadi beberapa fragmen. Contoh kesalahan umum:
-- "Imm An El" seharusnya "Immanuel"
-- "Sab In" seharusnya "Sabin" atau "Sabina"  
-- "Eli Zab Eth" seharusnya "Elizabeth"
+ATURAN KETAT:
+1. Ambil HANYA nama siswa (setelah "nama :" dan sebelum "tempat dan tanggal lahir")
+2. JANGAN ambil nama kota, sekolah, kepala sekolah, atau orang tua sebagai nama siswa
+3. WAJIB periksa bagian "nama orang tua/wali" — marga di sana biasanya SAMA dengan marga siswa. Jika marga orang tua terbaca lebih jelas, GUNAKAN ejaan tersebut untuk memperbaiki marga siswa yang terpecah atau salah baca oleh OCR
 
-ANDA HARUS:
-- Gabungkan fragmen-fragmen yang terpecah menjadi nama yang benar
-- Perbaiki huruf yang terpotong di akhir kata (misal "Sabin" -> "Sabina" jika konteks menunjukkan demikian)
-- Gunakan pengetahuan nama Indonesia/Manado/Minahasa untuk memperbaiki nama
-- Nama Minahasa/Manado umum: Ticoalu, Sumajow, Rumuat, Pasanda, Massie, Tumewu, Wowor, Mamahit, Rantung, Lumenta, dll.
+PERBAIKAN OCR — INI SANGAT PENTING:
+OCR pada ijazah sering memecah kata dengan titik-titik atau spasi karena format dokumen.
+
+Kesalahan umum:
+- Huruf dipisah titik: misal "S.A.N.C.I.A" seharusnya digabung jadi satu kata
+- Fragmen kata: misal "A.LIC.A" seharusnya digabung jadi satu kata utuh
+- Marga terpecah: fragmen huruf yang dipisah titik di akhir nama adalah SATU KATA MARGA, bukan dua kata terpisah
+- Awalan marga hilang: huruf pertama marga kadang tidak terbaca oleh OCR
+- Huruf salah baca: "J" dan "V" sering tertukar, "l" dan "i" sering tertukar, "rn" terbaca "m", "cl" terbaca "d"
+- Nama umum harus dikoreksi: OCR sering salah baca nama yang sebenarnya umum, perbaiki ke ejaan yang benar
+- Huruf tambahan: OCR kadang menambah huruf ekstra di akhir kata, hapus jika tidak masuk akal
+
+ATURAN KOREKSI NAMA:
+1. Gabungkan semua huruf/fragmen yang dipisah titik menjadi SATU KATA
+2. Marga siswa biasanya SAMA dengan marga orang tua/wali — gunakan ini untuk koreksi ejaan
+3. Jika marga orang tua terbaca lebih jelas, gunakan ejaan tersebut untuk nama siswa
+4. Marga Indonesia umumnya adalah SATU KATA — jangan pecah jadi dua kata terpisah
+5. Jika fragmen marga siswa mirip tapi tidak identik dengan marga orang tua, PRIORITASKAN ejaan dari marga orang tua
+6. Perbaiki nama depan dan tengah yang salah baca ke nama yang umum dan masuk akal
+7. Jika ada huruf tambahan yang tidak masuk akal di akhir nama, hapus
+
+TAHUN:
+- Ambil tahun terakhir dari "TAHUN AJARAN 20XX/20XX" (ambil yang kedua)
+- Atau tahun dari tanggal penerbitan ijazah
+- Format: 4 digit angka
 
 FORMAT JAWABAN:
-Balas HANYA dalam format JSON, tanpa teks lain:
-{"nama": "Nama Lengkap Siswa", "tahun": "2022"}
+Balas HANYA dalam format JSON:
+{"nama": "Nama Lengkap Siswa", "tahun": "2024"}
 
-Jika tahun tidak ditemukan, isi null:
-{"nama": "Nama Lengkap Siswa", "tahun": null}
-
-Jika nama tidak ditemukan sama sekali:
+Jika tidak ditemukan:
 {"nama": null, "tahun": null}
 
-JANGAN tambahkan penjelasan apapun. HANYA JSON."""
+JANGAN tambahkan penjelasan. HANYA JSON."""
                     },
                     {
                         "role": "user",
-                        "content": f"""Ekstrak nama siswa dari OCR ijazah berikut.
+                        "content": f"""Ekstrak nama siswa dan tahun dari OCR ijazah berikut.
 
 OCR:
 {text[:4000]}"""

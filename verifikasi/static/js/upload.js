@@ -29,6 +29,8 @@ fileInput.addEventListener("change", function () {
       `;
       fileList.appendChild(div);
     });
+  } else {
+    previewBox.style.display = "none";
   }
 });
 
@@ -51,6 +53,7 @@ verificationForm.addEventListener("submit", async function (e) {
   const csrfToken = getCSRFToken();
   const totalFiles = files.length;
   let completed = 0;
+  let failed = 0;
 
   emptyMessage.style.display = "none";
   resultsContainer.style.display = "flex";
@@ -62,7 +65,8 @@ verificationForm.addEventListener("submit", async function (e) {
 
   const submitBtn = verificationForm.querySelector("button[type='submit']");
   submitBtn.disabled = true;
-  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sedang memproses...';
+  submitBtn.innerHTML =
+    '<i class="fas fa-spinner fa-spin"></i> Sedang memproses...';
 
   for (let i = 0; i < totalFiles; i++) {
     const file = files[i];
@@ -89,7 +93,15 @@ verificationForm.addEventListener("submit", async function (e) {
         body: formData,
       });
 
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
       const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
       let iconClass = "fas fa-file";
       if (data.is_image) iconClass = "fas fa-file-image";
@@ -106,11 +118,27 @@ verificationForm.addEventListener("submit", async function (e) {
         </div>
       `;
     } catch (err) {
+      failed++;
+      console.error("Upload error:", file.name, err);
+
+      let errorMsg = "Gagal memproses file";
+      if (err.message.includes("Failed to fetch")) {
+        errorMsg = "Koneksi ke server gagal";
+      } else if (err.message.includes("timeout")) {
+        errorMsg = "Proses terlalu lama (timeout)";
+      } else if (err.message.includes("500")) {
+        errorMsg = "Server error — cek terminal Django";
+      } else if (err.message.includes("413")) {
+        errorMsg = "File terlalu besar";
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+
       loadingCard.innerHTML = `
         <div class="file-icon" style="color: var(--color-error);"><i class="fas fa-times-circle"></i></div>
         <div class="file-info">
           <p class="file-name">${file.name}</p>
-          <p style="color: var(--color-error); font-size: 12px;">Gagal memproses file</p>
+          <p style="color: var(--color-error); font-size: 12px;">${errorMsg}</p>
         </div>
       `;
     }
@@ -121,15 +149,23 @@ verificationForm.addEventListener("submit", async function (e) {
     progressCount.textContent = `${completed} / ${totalFiles}`;
   }
 
-  progressText.textContent = "Selesai!";
+  if (failed > 0) {
+    progressText.textContent = `Selesai! (${failed} gagal)`;
+  } else {
+    progressText.textContent = "Selesai!";
+  }
 
-  const resetBtn = document.createElement("a");
-  resetBtn.className = "btn btn-primary";
-  resetBtn.href = "?reset=1";
+  const resetBtn = document.createElement("button");
+  resetBtn.type = "button";
+  resetBtn.className = "btn-upload";
   resetBtn.innerHTML = '<i class="fas fa-redo"></i> Unggah Lagi';
-  resetBtn.style.marginTop = "10px";
+  resetBtn.style.marginTop = "12px";
+  resetBtn.addEventListener("click", function () {
+    window.location.href = window.location.pathname;
+  });
   resultsContainer.appendChild(resetBtn);
 
   submitBtn.disabled = false;
-  submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Unggah & Verifikasi';
+  submitBtn.innerHTML =
+    '<i class="fas fa-paper-plane"></i> Unggah & Verifikasi';
 });

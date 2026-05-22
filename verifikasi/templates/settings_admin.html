@@ -3,6 +3,7 @@
 <html>
   <head>
     <title>Pengaturan Admin - Verifikasi Ijazah</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
     <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=35" />
     <link
@@ -52,11 +53,7 @@
               {{ request.user.get_full_name|default:request.user.username }}
             </p>
             <p class="sidebar-profile-role">
-              {% if request.user.is_superuser %}
-              Super Admin
-              {% else %}
-              Admin
-              {% endif %}
+              {% if request.user.is_superuser %}Super Admin{% else %}Operator{% endif %}
             </p>
           </div>
         </div>
@@ -74,14 +71,15 @@
         >
 
         <p class="sidebar-label">Kelola</p>
-        <a href="{% url 'home' %}" class="menu-item" target="_blank"
-          ><i class="fas fa-upload"></i> Halaman Unggah</a
-        >
+        <a href="{% url 'home' %}" class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}"><i class="fas fa-upload"></i> Halaman Unggah</a>
         <a
           href="{% url 'settings_admin' %}"
           class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"
           ><i class="fas fa-cog"></i> Pengaturan</a
         >
+        {% if request.user.is_superuser %}
+        <a href="{% url 'manage_users' %}" class="menu-item {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}"><i class="fas fa-users-cog"></i> Kelola User</a>
+        {% endif %}
 
         <div class="sidebar-footer">
           <div class="sidebar-stats">
@@ -244,8 +242,7 @@
                   <div>
                     <p class="settings-detail-label">Terakhir Login</p>
                     <p class="settings-detail-value">
-                      {{ request.user.last_login|date:"d M Y,
-                      H:i"|default:"Belum pernah" }}
+                      {{ request.user.last_login|date:"d M Y, H:i"|default:"Belum pernah" }}
                     </p>
                   </div>
                 </div>

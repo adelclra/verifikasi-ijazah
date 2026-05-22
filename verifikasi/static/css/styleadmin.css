@@ -18,6 +18,10 @@ body {
   color: var(--color-text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
 }
 
 /* ============================================
@@ -31,8 +35,9 @@ body {
   z-index: 100;
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.12),
-    0 4px 12px rgba(8, 145, 178, 0.15);
+    0 2px 12px rgba(16, 184, 204, 0.12);
   height: var(--navbar-height);
+  width: 100%;
 }
 
 .nav-content {
@@ -79,25 +84,13 @@ body {
 .menu-toggle {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 .menu-label {
   color: white;
-  font-weight: 700;
-  font-size: 14px;
+  font-weight: 600;
+  font-size: 13px;
   display: none;
-}
-
-@media (max-width: 1024px) {
-  .menu-label {
-    display: inline-block;
-  }
-  .nav-content {
-    justify-content: space-between;
-  }
-  .nav-left {
-    margin-left: auto; /* push logo/text to the right */
-  }
 }
 
 /* ============================================
@@ -106,9 +99,10 @@ body {
 .container {
   display: flex;
   width: 100%;
-  min-height: calc(100vh - var(--navbar-height));
+  max-width: 100%;
   gap: 0;
   align-items: stretch;
+  flex: 1 0 auto;
 }
 
 /* ============================================
@@ -292,23 +286,22 @@ body {
    ============================================ */
 .sidebar-toggle {
   display: none;
-  position: relative;
   z-index: 201;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   border-radius: 10px;
   border: none;
-  background: var(--color-primary);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
   font-size: 18px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.25);
   align-items: center;
   justify-content: center;
   transition: all var(--transition);
+  flex-shrink: 0;
 }
 .sidebar-toggle:hover {
-  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.25);
 }
 .sidebar-toggle:active {
   transform: scale(0.95);
@@ -395,21 +388,10 @@ body {
    ============================================ */
 .stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 12px;
   margin-bottom: 20px;
   align-items: stretch;
-}
-
-/* Ensure better stacking on narrow screens: use 2 columns to avoid single-card rows */
-@media (max-width: 520px) {
-  .stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
-  .card {
-    min-height: 72px;
-  }
 }
 .card {
   background: var(--color-surface);
@@ -667,6 +649,28 @@ tr:hover td {
   flex-wrap: wrap;
 }
 
+.btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: white;
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+
+.btn-back:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
 /* ============================================
    ACTION BUTTONS (Table)
    ============================================ */
@@ -807,6 +811,12 @@ tr:hover td {
 }
 .chart-card canvas {
   max-height: 210px;
+  width: 100%;
+}
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 200px;
 }
 
 /* ============================================
@@ -1269,6 +1279,7 @@ tr:hover td {
 .admin-footer {
   background: var(--color-primary);
   margin-top: auto;
+  width: 100%;
 }
 .admin-footer-content {
   padding: 16px 24px;
@@ -1286,13 +1297,214 @@ tr:hover td {
 }
 
 /* ============================================
-   RESPONSIVE — Tablet (max 1024px)
+   UPLOAD PAGE
    ============================================ */
-@media (max-width: 1024px) {
+.file-input {
+  display: none;
+}
+
+.file-input-wrapper {
+  margin-bottom: 16px;
+}
+
+.file-input-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 36px 20px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.file-input-label:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+.file-input-icon {
+  font-size: 32px;
+  color: var(--color-primary);
+}
+
+.file-input-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.file-input-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.btn-upload {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--color-primary);
+  color: white;
+  box-shadow: 0 3px 12px rgba(8, 145, 178, 0.3);
+  font-family: inherit;
+}
+
+.btn-upload:hover {
+  box-shadow: 0 5px 16px rgba(8, 145, 178, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn-upload:disabled {
+  opacity: 0.6;
+  transform: none;
+  cursor: not-allowed;
+}
+
+.uploaded-file-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.selected-file-preview {
+  margin-bottom: 16px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+}
+
+.uploaded-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.uploaded-title i {
+  color: var(--color-primary);
+}
+
+.file-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.file-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--color-primary-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-primary);
+  font-size: 16px;
+}
+
+.file-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.file-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.file-info p {
+  font-size: 12px;
+  color: var(--color-text-light);
+  margin: 2px 0 0;
+}
+
+.verification-box {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.empty-icon {
+  font-size: 36px;
+  color: var(--color-border);
+  margin-bottom: 10px;
+}
+
+.verification-box p {
+  color: var(--color-text-light);
+  font-size: 14px;
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: var(--color-border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.file-action .btn-view {
+  display: inline-block;
+  padding: 6px 14px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: var(--radius);
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.file-action .btn-view:hover {
+  background: var(--color-primary-dark);
+}
+
+/* ============================================
+   RESPONSIVE — Tablet (max 1100px)
+   ============================================ */
+@media (max-width: 1100px) {
+  .menu-label {
+    display: inline-block;
+  }
+
   .sidebar-toggle {
     display: flex;
-    margin-left: 12px;
   }
+
   .sidebar {
     position: fixed;
     top: 0;
@@ -1309,13 +1521,21 @@ tr:hover td {
   .sidebar.open {
     transform: translateX(0);
   }
+
   .container {
     flex-direction: column;
   }
+
   .main {
-    padding: 20px;
+    padding: 20px 24px;
     width: 100%;
+    max-width: 100%;
   }
+
+  .stats {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
   .chart-wrapper {
     grid-template-columns: 1fr;
     max-height: none;
@@ -1342,6 +1562,10 @@ tr:hover td {
     width: 32px;
     height: 32px;
   }
+  .menu-label {
+    font-size: 12px;
+  }
+
   .main {
     padding: 16px;
   }
@@ -1364,7 +1588,7 @@ tr:hover td {
     font-size: 12px;
   }
   .stats {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 8px;
   }
   .card {
@@ -1381,6 +1605,7 @@ tr:hover td {
     font-size: 18px;
     margin-top: 4px;
   }
+
   .card-header {
     padding: 12px 16px;
   }
@@ -1390,6 +1615,7 @@ tr:hover td {
   .card-body {
     padding: 14px 16px;
   }
+
   table {
     display: block;
     overflow-x: auto;
@@ -1401,6 +1627,7 @@ tr:hover td {
     font-size: 12px;
     white-space: nowrap;
   }
+
   .table-controls {
     flex-direction: column;
     gap: 8px;
@@ -1410,6 +1637,12 @@ tr:hover td {
     width: 100%;
     min-width: 0;
   }
+  .table-controls .btn-view {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+  }
+
   .report-actions {
     flex-direction: column;
   }
@@ -1418,6 +1651,7 @@ tr:hover td {
     text-align: center;
     justify-content: center;
   }
+
   .pagination {
     gap: 4px;
   }
@@ -1426,6 +1660,7 @@ tr:hover td {
     font-size: 12px;
     min-height: 30px;
   }
+
   .modal-box {
     width: 100%;
     max-width: 100%;
@@ -1434,6 +1669,7 @@ tr:hover td {
     margin-top: auto;
     max-height: 85vh;
   }
+
   .profile-banner {
     flex-direction: column;
     text-align: center;
@@ -1444,6 +1680,7 @@ tr:hover td {
     width: 100%;
     justify-content: center;
   }
+
   .modern-file-card {
     flex-direction: column;
     text-align: center;
@@ -1458,6 +1695,7 @@ tr:hover td {
     width: 100%;
     justify-content: center;
   }
+
   .form-row {
     flex-direction: column;
     align-items: flex-start;
@@ -1466,12 +1704,14 @@ tr:hover td {
   .form-value {
     text-align: left;
   }
+
   .admin-footer-content {
     padding: 14px 16px;
   }
   .admin-footer-content p {
     font-size: 11px;
   }
+
   .settings-section-header {
     padding: 14px 16px;
   }
@@ -1488,22 +1728,46 @@ tr:hover td {
     height: 32px;
     font-size: 13px;
   }
-  .sidebar-toggle {
-    width: 48px;
-    height: 48px;
-    border-radius: 14px;
-    font-size: 18px;
-    bottom: 20px;
-    right: 20px;
+  .chart-wrapper {
+    grid-template-columns: 1fr;
+    max-height: none;
+    gap: 12px;
+  }
+  .chart-card {
+    padding: 14px;
+  }
+  .chart-card h4 {
+    font-size: 12.5px;
+    margin-bottom: 10px;
+  }
+  .chart-card canvas {
+    max-height: 200px;
+  }
+  .chart-container {
+    height: 180px;
+  }
+  .file-input-label {
+    padding: 28px 16px;
+  }
+  .file-input-icon {
+    font-size: 26px;
+  }
+  .file-input-text {
+    font-size: 13px;
+  }
+  .btn-upload {
+    padding: 12px;
+    font-size: 13px;
   }
 }
 
 /* ============================================
-   RESPONSIVE — Small Mobile (max 480px)
+   RESPONSIVE — Small Mobile (max 520px)
    ============================================ */
-@media (max-width: 480px) {
+@media (max-width: 520px) {
   .nav-content {
     padding: 0 12px;
+    gap: 8px;
   }
   .nav-text h2 {
     font-size: 13px;
@@ -1511,6 +1775,15 @@ tr:hover td {
   .logo {
     width: 28px;
     height: 28px;
+  }
+  .menu-label {
+    display: none;
+  }
+  .sidebar-toggle {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+    border-radius: 8px;
   }
   .main {
     padding: 12px;
@@ -1520,32 +1793,39 @@ tr:hover td {
   }
   .hero {
     padding: 14px 16px;
+    margin-bottom: 12px;
   }
   .hero h2 {
     font-size: 15px;
   }
+  .hero p {
+    font-size: 11px;
+  }
   .stats {
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+    gap: 8px;
   }
   .card {
-    padding: 10px 8px;
+    padding: 12px 8px;
   }
   .card p {
-    font-size: 9.5px;
+    font-size: 10px;
   }
   .card h3 {
-    font-size: 16px;
+    font-size: 17px;
   }
+
   th,
   td {
     padding: 6px 8px;
     font-size: 11px;
   }
+
   .badge {
     font-size: 9.5px;
     padding: 3px 7px;
   }
+
   .action-buttons {
     min-width: 80px;
     gap: 3px;
@@ -1555,10 +1835,13 @@ tr:hover td {
     padding: 4px 5px;
     font-size: 10px;
   }
+
   .page-btn {
     padding: 4px 8px;
     font-size: 11px;
+    min-height: 28px;
   }
+
   .modal-box {
     padding: 16px;
   }
@@ -1570,6 +1853,7 @@ tr:hover td {
     width: 100%;
     justify-content: center;
   }
+
   .profile-banner-avatar {
     width: 54px;
     height: 54px;
@@ -1578,49 +1862,94 @@ tr:hover td {
   .profile-banner-info h3 {
     font-size: 16px;
   }
+  .chart-wrapper {
+    grid-template-columns: 1fr;
+    max-height: none;
+    gap: 10px;
+  }
+  .chart-card {
+    padding: 12px;
+  }
+  .chart-card h4 {
+    font-size: 12px;
+    margin-bottom: 8px;
+  }
+  .chart-card canvas {
+    max-height: 180px;
+    width: 100%;
+  }
+  .chart-container {
+    height: 160px;
+  }
+  .file-input-label {
+    padding: 24px 12px;
+  }
+  .file-input-icon {
+    font-size: 24px;
+  }
+  .file-card {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .file-icon {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+  .file-name {
+    font-size: 12px;
+  }
 }
 
 /* ============================================
-   RESPONSIVE 
+   RESPONSIVE — Very Small (max 360px)
    ============================================ */
 @media (max-width: 360px) {
   .nav-text h2 {
-    font-size: 12px;
+    font-size: 11px;
   }
   .logo {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
   }
   .main {
-    padding: 10px;
+    padding: 8px;
+  }
+  .hero {
+    padding: 12px 14px;
   }
   .hero h2 {
     font-size: 14px;
   }
+  .hero p {
+    font-size: 10px;
+  }
+  .card {
+    padding: 10px 6px;
+  }
+  .card p {
+    font-size: 9px;
+  }
   .card h3 {
     font-size: 15px;
   }
-}
-
-.navbar {
-  background: var(--color-primary) !important;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.12),
-    0 2px 12px rgba(16, 184, 204, 0.12) !important;
-}
-.hero {
-  background: var(--color-primary) !important;
-}
-.btn-view,
-.save-btn,
-.profile-edit-btn,
-.modern-view-btn,
-.page-btn.active {
-  background: var(--color-primary) !important;
-  border-color: var(--color-primary) !important;
-  color: #fff !important;
-}
-.page-btn.active:hover {
-  background: var(--color-primary-dark) !important;
-  border-color: var(--color-primary-dark) !important;
+  .main h2 {
+    font-size: 15px;
+  }
+  .section-subtitle {
+    font-size: 11px;
+  }
+  .chart-wrapper {
+    gap: 8px;
+  }
+  .chart-card {
+    padding: 10px;
+  }
+  .chart-card h4 {
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  .chart-container {
+    height: 140px;
+  }
 }

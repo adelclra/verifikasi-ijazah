@@ -31,6 +31,9 @@ function openEditModal(id, nama, tahun) {
   document.getElementById("edit-id").value = id;
   document.getElementById("edit-nama").value = nama;
   document.getElementById("edit-tahun").value = tahun;
+
+  var params = new URLSearchParams(window.location.search);
+  document.getElementById("edit-page").value = params.get("page") || "1";
 }
 
 function closeEditModal() {

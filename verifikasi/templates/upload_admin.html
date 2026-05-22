@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Unggah Dokumen - Verifikasi Ijazah</title>
+    {% load static %}
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=35" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <nav class="navbar">
+      <div class="nav-content">
+        <div class="nav-right">
+          <div class="menu-toggle">
+            <button
+              class="sidebar-toggle"
+              id="sidebarToggle"
+              onclick="toggleSidebar()"
+              aria-label="Toggle sidebar"
+            >
+              <i class="fas fa-bars"></i>
+            </button>
+            <span class="menu-label">Menu</span>
+          </div>
+        </div>
+        <div class="nav-left">
+          <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
+          <div class="nav-text"><h2>REGMABA UNSRAT</h2></div>
+        </div>
+      </div>
+    </nav>
+
+    <div
+      class="sidebar-overlay"
+      id="sidebarOverlay"
+      onclick="toggleSidebar()"
+    ></div>
+
+    <div class="container">
+      <div class="sidebar">
+        <div class="sidebar-profile">
+          <div class="sidebar-avatar">
+            {{ request.user.username|make_list|first|upper }}
+          </div>
+          <div class="sidebar-profile-info">
+            <p class="sidebar-profile-name">
+              {{ request.user.get_full_name|default:request.user.username }}
+            </p>
+            <p class="sidebar-profile-role">
+              {% if request.user.is_superuser %}Super Admin{% else %}Operator{% endif %}
+          </div>
+        </div>
+        <p class="sidebar-label">Menu Utama</p>
+        <a href="{% url 'dashboard_admin' %}" class="menu-item"><i class="fas fa-chart-pie"></i> Dashboard</a>
+        <a href="{% url 'reports_admin' %}" class="menu-item"><i class="fas fa-chart-line"></i> Laporan</a>
+        <p class="sidebar-label">Kelola</p>
+        <a href="{% url 'home' %}" class="menu-item active"><i class="fas fa-upload"></i> Halaman Unggah</a>
+        <a href="{% url 'settings_admin' %}" class="menu-item"><i class="fas fa-cog"></i> Pengaturan</a>
+        {% if request.user.is_superuser %}
+        <a href="{% url 'manage_users' %}" class="menu-item {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}"><i class="fas fa-users-cog"></i> Kelola User</a>
+        {% endif %}
+        <div class="sidebar-footer">
+          <div class="sidebar-stats">
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ total|default:"0" }}</span>
+              <span class="sidebar-stat-label">Dokumen</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ valid|default:"0" }}</span>
+              <span class="sidebar-stat-label">Valid</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ pending|default:"0" }}</span>
+              <span class="sidebar-stat-label">Menunggu</span>
+            </div>
+          </div>
+          <a href="{% url 'logout' %}" class="sidebar-logout"><i class="fas fa-sign-out-alt"></i> Keluar</a>
+        </div>
+      </div>
+
+      <div class="main">
+        <h2><i class="fas fa-cloud-upload-alt" style="color: var(--color-primary);"></i> Unggah Dokumen Ijazah</h2>
+        <p class="section-subtitle">Unggah berkas ijazah untuk proses verifikasi tahun kelulusan</p>
+
+        <div class="card section-card">
+          <div class="card-header">
+            <h3><i class="fas fa-cloud-upload-alt"></i> Unggah Berkas</h3>
+          </div>
+          <div class="card-body">
+            <form id="verification-form" method="POST" enctype="multipart/form-data">
+              {% csrf_token %}
+              <div class="file-input-wrapper">
+                <input id="ijazah-file" type="file" name="ijazah" multiple required class="file-input" />
+                <label for="ijazah-file" class="file-input-label">
+                  <i class="fas fa-folder-open file-input-icon"></i>
+                  <span class="file-input-text">Klik untuk pilih satu / banyak file</span>
+                  <span class="file-input-hint">Format: JPG, JPEG, PNG, PDF (Maks. 10MB)</span>
+                </label>
+              </div>
+
+              <div id="selected-file-preview" class="uploaded-file-box selected-file-preview" style="display: none">
+                <p class="uploaded-title"><i class="fas fa-paperclip"></i> File yang dipilih</p>
+                <div id="file-list"></div>
+              </div>
+
+              <button type="submit" class="btn-upload">
+                <i class="fas fa-paper-plane"></i> Unggah & Verifikasi
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card section-card" style="margin-top: 16px;">
+          <div class="card-header">
+            <h3><i class="fas fa-clipboard-check"></i> Hasil Unggah</h3>
+          </div>
+          <div class="card-body">
+            <div id="upload-progress" style="display: none; margin-bottom: 15px;">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <span id="progress-text" style="font-size: 14px; color: var(--color-text-light);">Memproses...</span>
+                <span id="progress-count" style="font-size: 14px; font-weight: 600; color: var(--color-primary);"></span>
+              </div>
+              <div class="progress-track">
+                <div id="progress-bar" class="progress-fill"></div>
+              </div>
+            </div>
+
+            <div id="results-container" class="uploaded-file-box" style="display: none;"></div>
+
+            <div id="empty-message" class="verification-box default">
+              <i class="fas fa-inbox empty-icon"></i>
+              <p>Belum ada dokumen yang diunggah.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="admin-footer">
+      <div class="admin-footer-content">
+        <p><i class="fas fa-university"></i> REGMABA UNSRAT &mdash; Sistem Verifikasi Tahun Ijazah &copy; 2026 Universitas Sam Ratulangi</p>
+      </div>
+    </footer>
+
+    <script src="{% static 'js/upload.js' %}?v=5"></script>
+    <script src="{% static 'js/sidebar.js' %}"></script>
+  </body>
+</html>

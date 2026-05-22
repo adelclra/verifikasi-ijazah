@@ -1,8 +1,10 @@
 from django.urls import path
+from django.shortcuts import redirect
 from . import views
 
 urlpatterns = [
-    path("", views.upload_ijazah, name="home"),
+    path("", lambda request: redirect("dashboard_admin"), name="root"),
+    path("upload/", views.upload_ijazah, name="home"),
     path("upload-single/", views.upload_single, name="upload_single"),
 
     path("login/", views.login_admin, name="login"),
@@ -13,6 +15,10 @@ urlpatterns = [
     path("reports/download/pdf/", views.download_reports_pdf, name="download_reports_pdf"),
     path("reports/download/excel/", views.download_reports_excel, name="download_reports_excel"),
     path("settings/", views.settings_admin, name="settings_admin"),
+    path("settings/users/", views.manage_users, name="manage_users"),
+    path("settings/users/add/", views.add_user, name="add_user"),
+    path("settings/users/edit/<int:user_id>/", views.edit_user, name="edit_user"),
+    path("settings/users/delete/<int:user_id>/", views.delete_user, name="delete_user"),
 
     path("view-document/<int:document_id>/", views.view_document, name="view_document"),
 

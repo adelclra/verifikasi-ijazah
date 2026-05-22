@@ -60,8 +60,9 @@ def process_file_background(obj_id, file_path, original_filename):
 
 
 # ======================
-# UPLOAD USER
+# UPLOAD
 # ======================
+@login_required(login_url="login")
 def upload_ijazah(request):
     hasil_ocr = ""
     uploaded_files = []
@@ -110,6 +111,8 @@ def upload_ijazah(request):
                 salah_tahun = False
                 tidak_terbaca = False
 
+            file.seek(0)
+
             obj = VerifikasiIjazah.objects.create(
                 nama=nama_final,
                 nama_ocr=nama_final,
@@ -134,29 +137,30 @@ def upload_ijazah(request):
 
         last_data = VerifikasiIjazah.objects.order_by("-created_at").first()
 
-    return render(request, "index.html", {
+    return render(request, "upload_admin.html", {
         "data": last_data,
         "uploaded_files": uploaded_files,
+        **_sidebar_context(),
     })
 
 
 # ======================
 # UPLOAD SINGLE (AJAX)
 # ======================
+@login_required(login_url="login")
 def upload_single(request):
     if request.method != "POST" or not request.FILES.get("ijazah"):
         return JsonResponse({"error": "No file"}, status=400)
 
     file = request.FILES["ijazah"]
-    os.makedirs(settings.MEDIA_ROOT, exist_ok=True)
 
-    filename = f"{uuid.uuid4()}_{file.name}"
-    file_path = os.path.join(settings.MEDIA_ROOT, filename)
+    import tempfile
+    temp_dir = tempfile.mkdtemp()
+    file_path = os.path.join(temp_dir, file.name)
 
     with open(file_path, "wb+") as destination:
         for chunk in file.chunks():
             destination.write(chunk)
-
     file_lower = file.name.lower()
     is_image = file_lower.endswith((".png", ".jpg", ".jpeg"))
     is_pdf = file_lower.endswith(".pdf")
@@ -184,6 +188,8 @@ def upload_single(request):
         salah_tahun = False
         tidak_terbaca = False
 
+    file.seek(0)
+
     obj = VerifikasiIjazah.objects.create(
         nama=nama_final,
         nama_ocr=nama_final,
@@ -198,14 +204,16 @@ def upload_single(request):
 
     print("✔ DONE:", file.name, "|", obj.nama, "|", tahun)
 
+    file_url = obj.file.url if obj.file else None
+    file_url = fix_cloudinary_url(file_url, obj.file.name if obj.file else None)
+
     return JsonResponse({
         "nama": obj.nama,
         "tahun": obj.extracted_year or "-",
-        "file_url": obj.file.url if obj.file else None,
+        "file_url": file_url,
         "is_image": is_image,
         "is_pdf": is_pdf,
     })
-
 
 # ======================
 # HITUNG CER/WER
@@ -271,14 +279,19 @@ def dashboard_admin(request):
     all_data = VerifikasiIjazah.objects.all()
     metrics = _get_avg_metrics(all_data)
 
+    total_count = all_data.count()
+    valid_count = all_data.filter(status__iexact="VALID").count()
+    accuracy = round((valid_count / total_count) * 100, 2) if total_count else 0
+
     return render(request, "dashboard_admin.html", {
         "data": data,
-        "total": all_data.count(),
-        "valid": all_data.filter(status__iexact="VALID").count(),
+        "total": total_count,
+        "valid": valid_count,
         "not_valid": all_data.filter(status__iexact="TIDAK MEMENUHI SYARAT").count(),
         "pending": all_data.filter(status__icontains="MENUNGGU").count(),
         "unknown_year": all_data.filter(status__iexact="TIDAK TERDETEKSI").count(),
         "today": all_data.filter(created_at__date=timezone.localdate()).count(),
+        "accuracy": accuracy,
         "search": search or "",
         "status": status or "",
         **metrics,
@@ -294,7 +307,8 @@ def verifikasi_valid(request, id):
     data.status = "VALID"
     _update_metrics(data)
     data.save()
-    return redirect("dashboard_admin")
+    page = request.GET.get("page", "1")
+    return redirect(f"/dashboard/?page={page}")
 
 
 @login_required(login_url="login")
@@ -303,8 +317,8 @@ def verifikasi_tidak_sesuai(request, id):
     data.status = "TIDAK MEMENUHI SYARAT"
     _update_metrics(data)
     data.save()
-    return redirect("dashboard_admin")
-
+    page = request.GET.get("page", "1")
+    return redirect(f"/dashboard/?page={page}")
 
 # ======================
 # REPORTS
@@ -337,9 +351,22 @@ def _build_report_data(request):
     page_number = request.GET.get("page")
     report_rows = paginator.get_page(page_number)
 
+    import datetime
+    start_of_month = timezone.make_aware(
+        datetime.datetime(today.year, today.month, 1)
+    )
+    if today.month == 12:
+        end_of_month = timezone.make_aware(
+            datetime.datetime(today.year + 1, 1, 1)
+        )
+    else:
+        end_of_month = timezone.make_aware(
+            datetime.datetime(today.year, today.month + 1, 1)
+        )
+    
     month_data = VerifikasiIjazah.objects.filter(
-        created_at__year=today.year,
-        created_at__month=today.month,
+        created_at__gte=start_of_month,
+        created_at__lt=end_of_month,
     )
 
     total_month = month_data.count()
@@ -601,9 +628,15 @@ def view_document(request, document_id):
     item = get_object_or_404(VerifikasiIjazah, id=document_id)
     all_data = VerifikasiIjazah.objects.all()
 
+    file_url = item.file.url if item.file else None
+    file_url = fix_cloudinary_url(file_url, item.file.name if item.file else None)
+
+    page = request.GET.get("page", "1")
+
     return render(request, "view_document.html", {
         "item": item,
-        "file_url": item.file.url if item.file else None,
+        "file_url": file_url,
+        "page": page,
         "total": all_data.count(),
         "valid": all_data.filter(status__iexact="VALID").count(),
         "pending": all_data.filter(status__icontains="MENUNGGU").count(),
@@ -619,6 +652,7 @@ def edit_verifikasi(request):
         nama = request.POST.get("nama")
         tahun = request.POST.get("tahun")
         status = request.POST.get("status")
+        page = request.POST.get("page", "1")
 
         item = VerifikasiIjazah.objects.get(id=item_id)
         item.nama = nama
@@ -629,7 +663,31 @@ def edit_verifikasi(request):
         _update_metrics(item)
         item.save()
 
+        return redirect(f"/dashboard/?page={page}")
+
     return redirect("dashboard_admin")
+
+
+# ======================
+# CLOUDINARY
+# ======================
+def fix_cloudinary_url(url, filename):
+    if not url:
+        return url
+
+    is_pdf = False
+    
+    if filename and filename.lower().endswith('.pdf'):
+        is_pdf = True
+    elif '/image/upload/' in url:
+        image_exts = ('.jpg', '.jpeg', '.png', '.gif', '.webp')
+        if not any(url.lower().endswith(ext) for ext in image_exts):
+            is_pdf = True
+    
+    if is_pdf and '/image/upload/' in url:
+        return url.replace('/image/upload/', '/image/upload/pg_1/') + '.jpg'
+    
+    return url
 
 
 # ======================
@@ -657,6 +715,119 @@ def logout_admin(request):
     logout(request)
     return redirect("login")
 
+# ======================
+# KELOLA USER (SUPER ADMIN ONLY)
+# ======================
+@login_required(login_url="login")
+def manage_users(request):
+    if not request.user.is_superuser:
+        return redirect("dashboard_admin")
+
+    from django.contrib.auth.models import User
+    users = User.objects.all().order_by("-date_joined")
+
+    return render(request, "manage_users.html", {
+        "users": users,
+        **_sidebar_context(),
+    })
+
+
+@login_required(login_url="login")
+def add_user(request):
+    if not request.user.is_superuser:
+        return redirect("dashboard_admin")
+
+    if request.method == "POST":
+        from django.contrib.auth.models import User
+
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "").strip()
+        role = request.POST.get("role", "operator")
+
+        if not username or not password:
+            return render(request, "manage_users.html", {
+                "users": User.objects.all().order_by("-date_joined"),
+                "error": "Username dan password wajib diisi.",
+                "show_add_modal": True,
+                **_sidebar_context(),
+            })
+
+        if User.objects.filter(username=username).exists():
+            return render(request, "manage_users.html", {
+                "users": User.objects.all().order_by("-date_joined"),
+                "error": "Username sudah digunakan.",
+                "show_add_modal": True,
+                **_sidebar_context(),
+            })
+
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password,
+        )
+
+        if role == "superadmin":
+            user.is_superuser = True
+            user.is_staff = True
+            user.save()
+
+        return redirect("manage_users")
+
+    return redirect("manage_users")
+
+
+@login_required(login_url="login")
+def edit_user(request, user_id):
+    if not request.user.is_superuser:
+        return redirect("dashboard_admin")
+
+    from django.contrib.auth.models import User
+    target_user = get_object_or_404(User, id=user_id)
+
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "").strip()
+        role = request.POST.get("role", "operator")
+
+        if username:
+            if User.objects.filter(username=username).exclude(id=target_user.id).exists():
+                return render(request, "manage_users.html", {
+                    "users": User.objects.all().order_by("-date_joined"),
+                    "error": "Username sudah digunakan.",
+                    **_sidebar_context(),
+                })
+            target_user.username = username
+
+        if email:
+            target_user.email = email
+
+        if password:
+            target_user.set_password(password)
+
+        target_user.is_superuser = (role == "superadmin")
+        target_user.is_staff = (role == "superadmin")
+        target_user.save()
+
+        return redirect("manage_users")
+
+    return redirect("manage_users")
+
+
+@login_required(login_url="login")
+def delete_user(request, user_id):
+    if not request.user.is_superuser:
+        return redirect("dashboard_admin")
+
+    from django.contrib.auth.models import User
+    target_user = get_object_or_404(User, id=user_id)
+
+    if target_user.id == request.user.id:
+        return redirect("manage_users")
+
+    target_user.delete()
+    return redirect("manage_users")
 
 # ======================
 # SETTINGS
