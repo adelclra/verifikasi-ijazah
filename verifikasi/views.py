@@ -155,65 +155,77 @@ def upload_single(request):
     file = request.FILES["ijazah"]
 
     import tempfile
+    import shutil
+
     temp_dir = tempfile.mkdtemp()
-    file_path = os.path.join(temp_dir, file.name)
 
-    with open(file_path, "wb+") as destination:
-        for chunk in file.chunks():
-            destination.write(chunk)
-    file_lower = file.name.lower()
-    is_image = file_lower.endswith((".png", ".jpg", ".jpeg"))
-    is_pdf = file_lower.endswith(".pdf")
+    try:
+        file_path = os.path.join(temp_dir, file.name)
 
-    print("START PROCESS:", file.name)
-    nama_ocr, tahun, hasil_ocr = extract_data(file_path)
+        with open(file_path, "wb+") as destination:
+            for chunk in file.chunks():
+                destination.write(chunk)
 
-    if (
-        not nama_ocr
-        or nama_ocr == "Perlu Verifikasi Manual"
-        or nama_ocr == "Tidak Terdeteksi"
-    ):
-        nama_final = os.path.splitext(file.name)[0]
-    else:
-        nama_final = nama_ocr
+        file_lower = file.name.lower()
+        is_image = file_lower.endswith((".png", ".jpg", ".jpeg"))
+        is_pdf = file_lower.endswith(".pdf")
 
-    if not tahun:
-        status = "TIDAK TERDETEKSI"
-        hasil_benar = False
-        salah_tahun = False
-        tidak_terbaca = True
-    else:
-        status = "MENUNGGU VERIFIKASI"
-        hasil_benar = True
-        salah_tahun = False
-        tidak_terbaca = False
+        print("START PROCESS:", file.name)
+        nama_ocr, tahun, hasil_ocr = extract_data(file_path)
 
-    file.seek(0)
+        if (
+            not nama_ocr
+            or nama_ocr == "Perlu Verifikasi Manual"
+            or nama_ocr == "Tidak Terdeteksi"
+        ):
+            nama_final = os.path.splitext(file.name)[0]
+        else:
+            nama_final = nama_ocr
 
-    obj = VerifikasiIjazah.objects.create(
-        nama=nama_final,
-        nama_ocr=nama_final,
-        nim="-",
-        file=file,
-        extracted_year=str(tahun) if tahun else "",
-        status=status,
-        hasil_benar=hasil_benar,
-        salah_tahun=salah_tahun,
-        tidak_terbaca=tidak_terbaca,
-    )
+        if not tahun:
+            status = "TIDAK TERDETEKSI"
+            hasil_benar = False
+            salah_tahun = False
+            tidak_terbaca = True
+        else:
+            status = "MENUNGGU VERIFIKASI"
+            hasil_benar = True
+            salah_tahun = False
+            tidak_terbaca = False
 
-    print("✔ DONE:", file.name, "|", obj.nama, "|", tahun)
+        file.seek(0)
 
-    file_url = obj.file.url if obj.file else None
-    file_url = fix_cloudinary_url(file_url, obj.file.name if obj.file else None)
+        obj = VerifikasiIjazah.objects.create(
+            nama=nama_final,
+            nama_ocr=nama_final,
+            nim="-",
+            file=file,
+            extracted_year=str(tahun) if tahun else "",
+            status=status,
+            hasil_benar=hasil_benar,
+            salah_tahun=salah_tahun,
+            tidak_terbaca=tidak_terbaca,
+            uploaded_by=request.user,
+        )
 
-    return JsonResponse({
-        "nama": obj.nama,
-        "tahun": obj.extracted_year or "-",
-        "file_url": file_url,
-        "is_image": is_image,
-        "is_pdf": is_pdf,
-    })
+        print("✔ DONE:", file.name, "|", obj.nama, "|", tahun)
+
+        file_url = obj.file.url if obj.file else None
+        file_url = fix_cloudinary_url(file_url, obj.file.name if obj.file else None)
+
+        return JsonResponse({
+            "nama": obj.nama,
+            "tahun": obj.extracted_year or "-",
+            "file_url": file_url,
+            "is_image": is_image,
+            "is_pdf": is_pdf,
+        })
+
+    finally:
+        try:
+            shutil.rmtree(temp_dir)
+        except:
+            pass
 
 # ======================
 # HITUNG CER/WER

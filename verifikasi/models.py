@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class VerifikasiIjazah(models.Model):
@@ -26,6 +27,8 @@ class VerifikasiIjazah(models.Model):
 
     cer = models.FloatField(null=True, blank=True)
     wer = models.FloatField(null=True, blank=True)
+
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='verifikasi')
 
     def __str__(self):
         return f"{self.nama} - {self.status}"

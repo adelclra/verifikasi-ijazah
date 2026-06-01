@@ -25,7 +25,7 @@ ocr = PaddleOCR(
 
 
 # =========================
-# KNOWN CITY NAMES (FILTER)
+# KNOWN CITY NAMES 
 # =========================
 KNOWN_CITIES = {
     "tomohon", "manado", "bitung", "jakarta", "surabaya", "bandung",
@@ -37,13 +37,44 @@ KNOWN_CITIES = {
     "langowan", "airmadidi", "amurang", "kotamobagu", "minahasa",
 }
 
+# =========================
+# COMMON INDONESIAN NAMES
+# =========================
+COMMON_FIRST_NAMES = {
+    "adelia": "Adelia", "adelina": "Adelina", "angela": "Angela",
+    "cecilia": "Cecilia", "cynthia": "Cynthia", "delvina": "Delvina",
+    "felicia": "Felicia", "gloria": "Gloria", "jessica": "Jessica",
+    "maria": "Maria", "natalia": "Natalia", "patricia": "Patricia",
+    "priscilla": "Priscilla", "sancia": "Sancia", "stella": "Stella",
+    "theresia": "Theresia", "victoria": "Victoria", "yolanda": "Yolanda",
+    "michael": "Michael", "jonathan": "Jonathan", "christian": "Christian",
+    "daniel": "Daniel", "gabriel": "Gabriel", "joshua": "Joshua",
+    "samuel": "Samuel", "nicholas": "Nicholas", "william": "William",
+    "alexander": "Alexander", "ferdinand": "Ferdinand", "hendrick": "Hendrick",
+    "reymond": "Reymond", "raymond": "Raymond", "steven": "Steven",
+    "franklin": "Franklin", "gerald": "Gerald", "clarita": "Clarita",
+    "clara": "Clara", "claudia": "Claudia", "melisa": "Melisa",
+    "melissa": "Melissa", "olivia": "Olivia", "regina": "Regina",
+}
 
-# =========================
-# DEBUG SAVE
-# =========================
-def debug_save_image(image, name):
-    os.makedirs("debug", exist_ok=True)
-    cv2.imwrite(f"debug/{name}.jpg", image)
+COMMON_SURNAMES = {
+    "langitan": "Langitan", "lontoh": "Lontoh", "lumowa": "Lumowa",
+    "mamahit": "Mamahit", "mamuaya": "Mamuaya", "mandagi": "Mandagi",
+    "mangindaan": "Mangindaan", "manoppo": "Manoppo", "maramis": "Maramis",
+    "mokoginta": "Mokoginta", "mokodompit": "Mokodompit",
+    "pangkey": "Pangkey", "pangemanan": "Pangemanan",
+    "pakasi": "Pakasi", "paruntu": "Paruntu", "pondaag": "Pondaag",
+    "rarung": "Rarung", "rompas": "Rompas", "runtuwene": "Runtuwene",
+    "sajow": "Sajow", "sendow": "Sendow", "sondakh": "Sondakh",
+    "sumual": "Sumual", "supit": "Supit", "tamon": "Tamon",
+    "tangkudung": "Tangkudung", "tendean": "Tendean", "ticoalu": "Ticoalu",
+    "tulung": "Tulung", "tumbelaka": "Tumbelaka", "tumewu": "Tumewu",
+    "tungka": "Tungka", "walewangko": "Walewangko", "wenas": "Wenas",
+    "worang": "Worang", "wowor": "Wowor", "wullur": "Wullur",
+    "kalalo": "Kalalo", "kalangi": "Kalangi", "karinda": "Karinda",
+    "kaunang": "Kaunang", "kindangen": "Kindangen", "koleangan": "Koleangan",
+    "komaling": "Komaling", "komalig": "Komalig",
+}
 
 
 # =========================
@@ -53,8 +84,8 @@ def preprocess(image):
     try:
         h, w = image.shape[:2]
         target_width = 2000
-
         max_width = 2500
+
         if w < target_width:
             scale = target_width / w
             image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
@@ -65,25 +96,18 @@ def preprocess(image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         denoised = cv2.fastNlMeansDenoising(
-            gray,
-            h=10,
-            templateWindowSize=7,
-            searchWindowSize=21
+            gray, h=10, templateWindowSize=7, searchWindowSize=21
         )
 
-        clahe = cv2.createCLAHE(
-            clipLimit=2.0,
-            tileGridSize=(8, 8)
-        )
+        clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
         enhanced = clahe.apply(denoised)
 
         kernel = np.array([[0, -1, 0],
-                           [-1, 5, -1],
+                           [-1, 5.5, -1],
                            [0, -1, 0]])
         sharpened = cv2.filter2D(enhanced, -1, kernel)
 
         result = cv2.cvtColor(sharpened, cv2.COLOR_GRAY2BGR)
-
         return result
 
     except Exception as e:
@@ -117,16 +141,55 @@ def detect_document_type(text):
 # =========================
 def extract_year(text):
     text = text.upper()
-
     match = re.search(r"(20\d{2})\s*/\s*(20\d{2})", text)
     if match:
         return match.group(2)
-
     candidates = re.findall(r"\b20\d{2}\b", text)
     if candidates:
         return str(max(map(int, candidates)))
-
     return None
+
+
+# =========================
+# CORRECT COMMON OCR ERRORS
+# =========================
+def correct_ocr_name(name):
+    if not name:
+        return name
+
+    words = name.split()
+    corrected = []
+
+    for word in words:
+        w_lower = word.lower()
+
+        best_match = None
+        best_score = 0
+
+        all_names = {**COMMON_FIRST_NAMES, **COMMON_SURNAMES}
+        for known, proper in all_names.items():
+            if abs(len(w_lower) - len(known)) > 2:
+                continue
+
+            common = 0
+            temp = known
+            for ch in w_lower:
+                idx = temp.find(ch)
+                if idx != -1:
+                    common += 1
+                    temp = temp[:idx] + temp[idx + 1:]
+
+            score = common / max(len(known), len(w_lower))
+            if score > best_score and score >= 0.7:
+                best_score = score
+                best_match = proper
+
+        if best_match and best_score >= 0.7:
+            corrected.append(best_match)
+        else:
+            corrected.append(word.title())
+
+    return " ".join(corrected)
 
 
 # =========================
@@ -176,7 +239,8 @@ def extract_name_between_markers(text):
         r"MENERANGKAN\s+BAHWA\s+([A-Z\s]{5,})",
     ]
 
-    blacklist = {"ORANG TUA", "WALI", "KEPALA", "SEKOLAH", "PROVINSI", "KABUPATEN", "TEMPAT", "TANGGAL", "LAHIR", "DAN"}
+    blacklist = {"ORANG TUA", "WALI", "KEPALA", "SEKOLAH", "PROVINSI",
+                 "KABUPATEN", "TEMPAT", "TANGGAL", "LAHIR", "DAN"}
 
     for pattern in patterns:
         match = re.search(pattern, text, re.IGNORECASE)
@@ -194,13 +258,16 @@ def extract_name_between_markers(text):
 
     return None
 
+
 # =========================
-# EXTRACT PARENT SURNAME
+# EXTRACT PARENT SURNAME 
 # =========================
 def extract_parent_surname(text):
     text_clean = text.replace("\n", " ")
 
     patterns = [
+        r"orang\s+tua\s*/?\s*wali\s*[:/]?\s*([A-Za-z.\s]{3,}?)(?:\s+nomor|\s+\d{5,}|\s+LULUS|\s+dari)",
+        r"orang\s+tua\s*[:/]?\s*([A-Za-z.\s]{3,}?)(?:\s+nomor|\s+\d{5,}|\s+LULUS|\s+dari)",
         r"lahir\s+([A-Za-z.\s]{3,}?)\s+nama\s+orang\s+tua",
         r"lahir\s+([A-Za-z.\s]{3,}?)\s+nama\s+orang",
         r"lahir\s+(.{3,}?)\s+nama\s+orang",
@@ -210,12 +277,32 @@ def extract_parent_surname(text):
         match = re.search(pattern, text_clean, re.IGNORECASE)
         if match:
             raw = match.group(1).strip()
-            # Hapus titik dan karakter non-huruf
             raw = re.sub(r"[^A-Za-z\s]", " ", raw)
             raw = re.sub(r"\s+", " ", raw).strip()
             words = [w for w in raw.split() if len(w) >= 3]
             if words:
-                return words[-1].title()
+                surname = words[-1].title()
+                for known, proper in COMMON_SURNAMES.items():
+                    if len(surname) < 4:
+                        continue
+                    s_lower = surname.lower()
+                    if s_lower == known:
+                        return proper
+                    if len(s_lower) >= 4 and known.endswith(s_lower):
+                        return proper
+                    if len(s_lower) >= 4 and known.startswith(s_lower):
+                        return proper
+                    common = 0
+                    temp = known
+                    for ch in s_lower:
+                        idx = temp.find(ch)
+                        if idx != -1:
+                            common += 1
+                            temp = temp[:idx] + temp[idx + 1:]
+                    score = common / max(len(known), len(s_lower))
+                    if score >= 0.7:
+                        return proper
+                return surname
 
     return None
 
@@ -276,25 +363,16 @@ def parse_qwen_result(ai_result):
         nama = data.get("nama")
         tahun = data.get("tahun")
         return (nama, tahun)
-
     except:
         cleaned = ai_result.strip()
-
-        for prefix in [
-            "Nama Siswa:",
-            "NAMA SISWA:",
-            "Nama:",
-            "NAMA:",
-        ]:
+        for prefix in ["Nama Siswa:", "NAMA SISWA:", "Nama:", "NAMA:"]:
             if cleaned.upper().startswith(prefix.upper()):
                 cleaned = cleaned[len(prefix):].strip()
 
         if cleaned.upper() == "NULL":
             return None, None
-
         if len(cleaned) >= 3:
             return cleaned, None
-
         return None, None
 
 
@@ -360,7 +438,7 @@ def paddle_ocr_structured(image):
 
 
 # =========================
-# MAIN FUNCTION
+# MAIN FUNCTION 
 # =========================
 def extract_data(file_path):
     try:
@@ -378,23 +456,20 @@ def extract_data(file_path):
             return ("Tidak Terdeteksi", None, "")
 
         processed_image = preprocess(image)
-        debug_save_image(processed_image, "0_processed")
 
         text_full = paddle_ocr_text(processed_image)
         text_structured = paddle_ocr_structured(processed_image)
 
-        print("\n=== OCR FULL ===\n")
+        print("\n=== OCR FULL ===")
         print(text_full)
 
         doc_type = detect_document_type(text_full)
-        print("\n=== DOCUMENT TYPE ===\n")
-        print(doc_type)
+        print(f"\n=== DOCUMENT TYPE === {doc_type}")
 
         tahun = extract_year(text_full)
 
         ai_result = extract_with_qwen(text_structured or text_full)
-        print("\n=== QWEN RESULT ===\n")
-        print(ai_result)
+        print(f"\n=== QWEN RESULT === {ai_result}")
 
         nama_ai, tahun_ai = parse_qwen_result(ai_result)
 
@@ -402,25 +477,27 @@ def extract_data(file_path):
             tahun = tahun_ai
 
         parent_surname = extract_parent_surname(text_full)
-        print(f"\n=== PARENT SURNAME === {parent_surname}\n")
+        print(f"\n=== PARENT SURNAME === {parent_surname}")
 
         if is_valid_name(nama_ai) and len(nama_ai.split()) >= 2:
             nama_fixed = clean_name(nama_ai)
+            nama_fixed = correct_ocr_name(nama_fixed)
             if parent_surname:
                 nama_fixed = fix_surname_with_parent(nama_fixed, parent_surname)
             return (nama_fixed, tahun, text_full)
 
         nama_marker = extract_name_between_markers(text_full)
         if is_valid_name(nama_marker) and len(nama_marker.split()) >= 2:
+            nama_marker = correct_ocr_name(nama_marker)
             if parent_surname:
                 nama_marker = fix_surname_with_parent(nama_marker, parent_surname)
             return (nama_marker, tahun, text_full)
 
         if nama_ai and len(nama_ai.strip()) >= 3:
-            return (nama_ai.strip().title(), tahun, text_full)
+            return (correct_ocr_name(nama_ai.strip().title()), tahun, text_full)
 
         if nama_marker and len(nama_marker.strip()) >= 3:
-            return (nama_marker.strip().title(), tahun, text_full)
+            return (correct_ocr_name(nama_marker.strip().title()), tahun, text_full)
 
         return ("Perlu Verifikasi Manual", tahun, text_full)
 
