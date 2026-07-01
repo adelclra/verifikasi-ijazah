@@ -1,11 +1,11 @@
 <!doctype html>
 <html>
   <head>
-    <title>Laporan Admin - Verifikasi Ijazah</title>
+    <title>Laporan Admin - VERIFIKASI IJAZAH UNSRAT</title>
     {% load static %}
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
-    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=35" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=39" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
@@ -31,7 +31,7 @@
         </div>
         <div class="nav-left">
           <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
-          <div class="nav-text"><h2>REGMABA UNSRAT</h2></div>
+          <div class="nav-text"><h2>VERIFIKASI IJAZAH UNSRAT</h2></div>
         </div>
       </div>
     </nav>
@@ -43,7 +43,6 @@
     ></div>
 
     <div class="container">
-      <!-- SIDEBAR -->
       <div class="sidebar">
         <div class="sidebar-profile">
           <div class="sidebar-avatar">
@@ -54,7 +53,11 @@
               {{ request.user.get_full_name|default:request.user.username }}
             </p>
             <p class="sidebar-profile-role">
-              {% if request.user.is_superuser %}Super Admin{% else %}Operator{% endif %}
+              {% if request.user.is_superuser %}
+              Super Admin
+              {% else %}
+              Operator
+              {% endif %}
             </p>
           </div>
         </div>
@@ -62,24 +65,33 @@
         <a
           href="{% url 'dashboard_admin' %}"
           class="menu-item {% if request.resolver_match.url_name == 'dashboard_admin' %}active{% endif %}"
-          ><i class="fas fa-chart-pie"></i> Dashboard</a
         >
+          <i class="fas fa-chart-pie"></i> Dashboard
+        </a>
         <a
           href="{% url 'reports_admin' %}"
           class="menu-item {% if request.resolver_match.url_name == 'reports_admin' %}active{% endif %}"
-          ><i class="fas fa-chart-line"></i> Laporan</a
         >
+          <i class="fas fa-chart-line"></i> Laporan
+        </a>
         <p class="sidebar-label">Kelola</p>
-        <a href="{% url 'home' %}" class="menu-item" target="_blank"
+        <a
+          href="{% url 'home' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
           ><i class="fas fa-upload"></i> Halaman Unggah</a
         >
         <a
           href="{% url 'settings_admin' %}"
           class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"
-          ><i class="fas fa-cog"></i> Pengaturan</a
         >
+          <i class="fas fa-cog"></i> Pengaturan
+        </a>
         {% if request.user.is_superuser %}
-        <a href="{% url 'manage_users' %}" class="menu-item {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}"><i class="fas fa-users-cog"></i> Kelola User</a>
+        <a
+          href="{% url 'manage_users' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}"
+          ><i class="fas fa-users-cog"></i> Kelola User</a
+        >
         {% endif %}
         <div class="sidebar-footer">
           <div class="sidebar-stats">
@@ -92,8 +104,13 @@
               ><span class="sidebar-stat-label">Valid</span>
             </div>
             <div class="sidebar-stat-item">
-              <span class="sidebar-stat-value">{{ pending|default:"0" }}</span
-              ><span class="sidebar-stat-label">Menunggu</span>
+              <span class="sidebar-stat-value">{{ not_valid|default:"0" }}</span
+              ><span class="sidebar-stat-label">Tidak Memenuhi Syarat</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value"
+                >{{ perlu_diperiksa|default:"0" }}</span
+              ><span class="sidebar-stat-label">Perlu Diperiksa</span>
             </div>
           </div>
           <a href="{% url 'logout' %}" class="sidebar-logout"
@@ -102,7 +119,6 @@
         </div>
       </div>
 
-      <!-- MAIN -->
       <div class="main">
         <h2>
           <i class="fas fa-chart-line" style="color: var(--color-primary)"></i>
@@ -113,19 +129,50 @@
         </p>
 
         <div class="stats">
-          <div class="card"><p><i class="fas fa-folder"></i> Total Bulan Ini</p><h3>{{ total_month }}</h3></div>
-          <div class="card"><p><i class="fas fa-check-circle"></i> Valid</p><h3 class="text-success">{{ valid }}</h3></div>
-          <div class="card"><p><i class="fas fa-times-circle"></i> Tidak Memenuhi Syarat</p><h3 class="text-error">{{ not_valid }}</h3></div>
-          <div class="card"><p><i class="fas fa-question-circle"></i> Tidak Terdeteksi</p><h3 class="text-warning">{{ unknown_year }}</h3></div>
-          <div class="card"><p><i class="fas fa-clock"></i> Menunggu</p><h3 class="text-info">{{ pending }}</h3></div>
-          <div class="card"><p><i class="fas fa-bullseye"></i> Akurasi Verifikasi</p><h3>{{ accuracy }}%</h3></div>
-          <div class="card"><p><i class="fas fa-font"></i> CER Rata-rata</p><h3>{{ avg_cer }}%</h3></div>
-          <div class="card"><p><i class="fas fa-align-left"></i> WER Rata-rata</p><h3>{{ avg_wer }}%</h3></div>
-          <div class="card"><p><i class="fas fa-spell-check"></i> Akurasi CER</p><h3 class="text-success">{{ akurasi_cer }}%</h3></div>
-          <div class="card"><p><i class="fas fa-check-double"></i> Akurasi WER</p><h3 class="text-success">{{ akurasi_wer }}%</h3></div>
+          <div class="card">
+            <p><i class="fas fa-folder"></i> Total</p>
+            <h3>{{ total }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-check-circle"></i> Valid</p>
+            <h3 class="text-success">{{ valid }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-times-circle"></i> Tidak Memenuhi Syarat</p>
+            <h3 class="text-error">{{ not_valid }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-search"></i> Perlu Diperiksa</p>
+            <h3 class="text-warning">{{ perlu_diperiksa }}</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-question-circle"></i> Tidak Terdeteksi</p>
+            <h3 class="text-info">{{ tidak_terdeteksi }}</h3>
+          </div>
+          <div class="card">
+            <p>
+              <i class="fas fa-bullseye"></i> Akurasi Sistem (Keterbacaan OCR)
+            </p>
+            <h3 class="text-success">{{ accuracy }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-font"></i> CER Rata-rata</p>
+            <h3>{{ avg_cer }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-align-left"></i> WER Rata-rata</p>
+            <h3>{{ avg_wer }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-spell-check"></i> Akurasi CER</p>
+            <h3 class="text-success">{{ akurasi_cer }}%</h3>
+          </div>
+          <div class="card">
+            <p><i class="fas fa-check-double"></i> Akurasi WER</p>
+            <h3 class="text-success">{{ akurasi_wer }}%</h3>
+          </div>
         </div>
 
-        <!-- GRAFIK -->
         <div class="section-card">
           <div class="card-header">
             <h3><i class="fas fa-chart-bar"></i> Visualisasi Data</h3>
@@ -152,26 +199,26 @@
           {
             "valid": {{ valid|default:0 }},
             "not_valid": {{ not_valid|default:0 }},
-            "pending": {{ pending|default:0 }},
-            "unknown_year": {{ unknown_year|default:0 }}
+            "perlu_diperiksa": {{ perlu_diperiksa|default:0 }},
+            "tidak_terdeteksi": {{ tidak_terdeteksi|default:0 }}
           }
         </script>
 
-        <!-- EKSPOR -->
         <div class="report-actions" style="margin-top: 16px">
           <a
             href="{% url 'download_reports_pdf' %}?search={{ search }}&amp;status={{ status }}"
             class="btn-view"
-            ><i class="fas fa-file-pdf"></i> Ekspor PDF</a
           >
+            <i class="fas fa-file-pdf"></i> Ekspor PDF
+          </a>
           <a
             href="{% url 'download_reports_excel' %}?search={{ search }}&amp;status={{ status }}"
             class="btn-approve"
-            ><i class="fas fa-file-excel"></i> Ekspor Excel</a
           >
+            <i class="fas fa-file-excel"></i> Ekspor Excel
+          </a>
         </div>
 
-        <!-- TABEL -->
         <div class="section-card">
           <div class="card-header">
             <h3><i class="fas fa-list-alt"></i> Rincian Verifikasi</h3>
@@ -199,18 +246,6 @@
                   Valid
                 </option>
                 <option
-                  value="MENUNGGU"
-                  {%
-                  if
-                  status=""
-                  ="MENUNGGU"
-                  %}selected{%
-                  endif
-                  %}
-                >
-                  Menunggu
-                </option>
-                <option
                   value="TIDAK MEMENUHI SYARAT"
                   {%
                   if
@@ -220,7 +255,19 @@
                   endif
                   %}
                 >
-                  Tidak Valid
+                  Tidak Memenuhi Syarat
+                </option>
+                <option
+                  value="PERLU DIPERIKSA"
+                  {%
+                  if
+                  status=""
+                  ="PERLU DIPERIKSA"
+                  %}selected{%
+                  endif
+                  %}
+                >
+                  Perlu Diperiksa
                 </option>
                 <option
                   value="TIDAK TERDETEKSI"
@@ -281,6 +328,7 @@
                 <th>No</th>
                 <th>Nama</th>
                 <th>Tahun</th>
+                <th>Keterbacaan OCR</th>
                 <th>CER</th>
                 <th>WER</th>
                 <th>Status</th>
@@ -291,20 +339,19 @@
                 <td>{{ item.nama }}</td>
                 <td>{{ item.extracted_year|default:"-" }}</td>
                 <td>
-                  {% if item.cer != None %}
-                  {{ item.cer|floatformat:2 }}
-                  %
-                  {% else%}
-                  -
+                  {% if item.tidak_terbaca %}
+                  <span class="badge badge-error">Tidak Terbaca</span>
+                  {% else %}
+                  <span class="badge badge-success">Terbaca</span>
                   {% endif %}
                 </td>
                 <td>
-                  {% if item.wer != None %}
-                  {{ item.wer|floatformat:2 }}
-                  %
-                  {% else%}
-                  -
-                  {% endif %}
+                  {% if item.cer_persen != None %}
+                  {{item.cer_persen|floatformat:2 }} %{% else %}-{% endif %}
+                </td>
+                <td>
+                  {% if item.wer_persen != None %}
+                  {{item.wer_persen|floatformat:2 }} %{% else %}-{% endif %}
                 </td>
                 <td>
                   {% if item.status == "VALID" %}<span
@@ -313,13 +360,13 @@
                   >
                   {% elif item.status == "TIDAK MEMENUHI SYARAT" %}<span
                     class="badge badge-error"
-                    >TIDAK VALID</span
+                    >TIDAK MEMENUHI SYARAT</span
                   >
-                  {% elif item.status == "MENUNGGU VERIFIKASI" %}<span
-                    class="badge badge-info"
-                    >MENUNGGU</span
+                  {% elif item.status == "PERLU DIPERIKSA" %}<span
+                    class="badge badge-warning"
+                    >PERLU DIPERIKSA</span
                   >
-                  {% else %}<span class="badge badge-warning"
+                  {% else %}<span class="badge badge-info"
                     >TIDAK TERDETEKSI</span
                   >{% endif %}
                 </td>
@@ -331,17 +378,16 @@
       </div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="admin-footer">
       <div class="admin-footer-content">
         <p>
-          <i class="fas fa-university"></i> REGMABA UNSRAT &mdash; Sistem
-          Verifikasi Tahun Ijazah &copy; 2026 Universitas Sam Ratulangi
+          <i class="fas fa-university"></i> VERIFIKASI IJAZAH UNSRAT&copy; 2026
+          Universitas Sam Ratulangi
         </p>
       </div>
     </footer>
 
-    <script src="{% static 'js/reports.js' %}?v=5"></script>
+    <script src="{% static 'js/reports.js' %}?v=6"></script>
     <script src="{% static 'js/sidebar.js' %}"></script>
   </body>
 </html>

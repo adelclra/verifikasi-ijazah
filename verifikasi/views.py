@@ -1,5 +1,7 @@
 import os
 import uuid
+import re
+from datetime import date
 from django.shortcuts import render, get_object_or_404, redirect
 from django.conf import settings
 from django.utils import timezone
@@ -17,15 +19,96 @@ from .metrics import compute_cer, compute_wer
 
 
 # ======================
-# HELPER: SIDEBAR STATS
+# SIDEBAR STATS
 # ======================
 def _sidebar_context():
     all_data = VerifikasiIjazah.objects.all()
     return {
         "total": all_data.count(),
         "valid": all_data.filter(status__iexact="VALID").count(),
-        "pending": all_data.filter(status__icontains="MENUNGGU").count(),
+        "not_valid": all_data.filter(status__iexact="TIDAK MEMENUHI SYARAT").count(),
+        "perlu_diperiksa": all_data.filter(status__iexact="PERLU DIPERIKSA").count(),
     }
+
+
+# ======================
+# CEK NAMA GAGAL TERBACA
+# ======================
+BULAN_BUKAN_NAMA = {
+    "januari", "februari", "maret", "juni",
+    "juli", "agustus", "september", "oktober", "november", "desember",
+}
+
+
+def _is_nama_gagal(nama_ocr):
+    if not nama_ocr:
+        return True
+    if nama_ocr in ("Perlu Verifikasi Manual", "Tidak Terdeteksi"):
+        return True
+    nama_clean = nama_ocr.strip()
+    if len(nama_clean) < 5 or len(nama_clean.split()) < 2:
+        return True
+    words_lower = {w.lower() for w in nama_clean.split()}
+    if words_lower & BULAN_BUKAN_NAMA:
+        return True
+    return False
+
+
+# ======================
+# VALIDASI OTOMATIS TAHUN IJAZAH
+# ======================
+def _tentukan_status_otomatis(tahun, nama_gagal):
+    """
+    4 status:
+    - TIDAK TERDETEKSI  : tahun tidak terdeteksi (prioritas utama)
+    - PERLU DIPERIKSA   : tahun terdeteksi tapi nama bermasalah
+    - VALID             : tahun dalam rentang 3 tahun, nama OK
+    - TIDAK MEMENUHI SYARAT : tahun di luar rentang, nama OK
+    """
+
+    if not tahun:
+        return {
+            "status": "TIDAK TERDETEKSI",
+            "hasil_benar": False,
+            "tidak_terbaca": True,
+            "salah_tahun": False,
+        }
+
+    try:
+        tahun_int = int(str(tahun).strip())
+    except (ValueError, TypeError):
+        return {
+            "status": "TIDAK TERDETEKSI",
+            "hasil_benar": False,
+            "tidak_terbaca": True,
+            "salah_tahun": False,
+        }
+
+    if nama_gagal:
+        return {
+            "status": "PERLU DIPERIKSA",
+            "hasil_benar": False,
+            "tidak_terbaca": True,
+            "salah_tahun": False,
+        }
+
+    current_year = date.today().year
+    batas_bawah = current_year - 2
+
+    if batas_bawah <= tahun_int <= current_year:
+        return {
+            "status": "VALID",
+            "hasil_benar": True,
+            "tidak_terbaca": False,
+            "salah_tahun": False,
+        }
+    else:
+        return {
+            "status": "TIDAK MEMENUHI SYARAT",
+            "hasil_benar": True,
+            "tidak_terbaca": False,
+            "salah_tahun": True,
+        }
 
 
 # ======================
@@ -33,27 +116,36 @@ def _sidebar_context():
 # ======================
 def process_file_background(obj_id, file_path, original_filename):
     try:
-        nama_ocr, tahun, hasil_ocr = extract_data(file_path)
+        nama_ocr_raw, tahun, hasil_ocr = extract_data(file_path)
         obj = VerifikasiIjazah.objects.get(id=obj_id)
 
-        if nama_ocr and nama_ocr != "Perlu Verifikasi Manual":
-            obj.nama = nama_ocr
-
+        nama_gagal = _is_nama_gagal(nama_ocr_raw)
+        obj.nama_ocr = nama_ocr_raw or ""
+        obj.nama = nama_ocr_raw if not nama_gagal else os.path.splitext(original_filename)[0]
         obj.extracted_year = str(tahun) if tahun else ""
 
-        if not tahun:
-            obj.status = "TIDAK TERDETEKSI"
+        hasil = _tentukan_status_otomatis(tahun, nama_gagal)
+        obj.status = hasil["status"]
+        obj.hasil_benar = hasil["hasil_benar"]
+        obj.salah_tahun = hasil["salah_tahun"]
+        obj.tidak_terbaca = hasil["tidak_terbaca"]
+
+        if nama_gagal:
+            obj.cer = None
+            obj.wer = None
         else:
-            obj.status = "MENUNGGU VERIFIKASI"
+            obj.cer = 0.0
+            obj.wer = 0.0
 
         obj.save()
-        print("✔ DONE:", original_filename, "|", obj.nama, "|", tahun)
+        print("✔ DONE:", original_filename, "|", obj.nama, "|", tahun, "|", obj.status)
 
     except Exception as e:
         print("ERROR:", e)
         try:
             obj = VerifikasiIjazah.objects.get(id=obj_id)
-            obj.status = "TIDAK TERDETEKSI"
+            obj.status = "PERLU DIPERIKSA"
+            obj.tidak_terbaca = True
             obj.save()
         except:
             pass
@@ -89,33 +181,29 @@ def upload_ijazah(request):
             is_pdf = file_lower.endswith(".pdf")
 
             print("START PROCESS:", file.name)
-            nama_ocr, tahun, hasil_ocr = extract_data(file_path)
+            nama_ocr_raw, tahun, hasil_ocr = extract_data(file_path)
 
-            if (
-                not nama_ocr
-                or nama_ocr == "Perlu Verifikasi Manual"
-                or nama_ocr == "Tidak Terdeteksi"
-            ):
-                nama_final = os.path.splitext(file.name)[0]
-            else:
-                nama_final = nama_ocr
+            nama_gagal = _is_nama_gagal(nama_ocr_raw)
+            nama_final = nama_ocr_raw if not nama_gagal else os.path.splitext(file.name)[0]
 
-            if not tahun:
-                status = "TIDAK TERDETEKSI"
-                hasil_benar = False
-                salah_tahun = False
-                tidak_terbaca = True
+            hasil = _tentukan_status_otomatis(tahun, nama_gagal)
+            status = hasil["status"]
+            hasil_benar = hasil["hasil_benar"]
+            salah_tahun = hasil["salah_tahun"]
+            tidak_terbaca = hasil["tidak_terbaca"]
+
+            if nama_gagal:
+                cer_val = None
+                wer_val = None
             else:
-                status = "MENUNGGU VERIFIKASI"
-                hasil_benar = True
-                salah_tahun = False
-                tidak_terbaca = False
+                cer_val = 0.0
+                wer_val = 0.0
 
             file.seek(0)
 
             obj = VerifikasiIjazah.objects.create(
                 nama=nama_final,
-                nama_ocr=nama_final,
+                nama_ocr=nama_ocr_raw or "",
                 nim="-",
                 file=file,
                 extracted_year=str(tahun) if tahun else "",
@@ -123,13 +211,16 @@ def upload_ijazah(request):
                 hasil_benar=hasil_benar,
                 salah_tahun=salah_tahun,
                 tidak_terbaca=tidak_terbaca,
+                cer=cer_val,
+                wer=wer_val,
             )
 
-            print("✔ DONE:", file.name, "|", obj.nama, "|", tahun)
+            print("✔ DONE:", file.name, "|", obj.nama, "|", tahun, "|", obj.status)
 
             uploaded_files.append({
                 "nama": obj.nama,
                 "tahun": obj.extracted_year or "-",
+                "status": obj.status,
                 "file_url": obj.file.url if obj.file else None,
                 "is_image": is_image,
                 "is_pdf": is_pdf,
@@ -171,33 +262,29 @@ def upload_single(request):
         is_pdf = file_lower.endswith(".pdf")
 
         print("START PROCESS:", file.name)
-        nama_ocr, tahun, hasil_ocr = extract_data(file_path)
+        nama_ocr_raw, tahun, hasil_ocr = extract_data(file_path)
 
-        if (
-            not nama_ocr
-            or nama_ocr == "Perlu Verifikasi Manual"
-            or nama_ocr == "Tidak Terdeteksi"
-        ):
-            nama_final = os.path.splitext(file.name)[0]
-        else:
-            nama_final = nama_ocr
+        nama_gagal = _is_nama_gagal(nama_ocr_raw)
+        nama_final = nama_ocr_raw if not nama_gagal else os.path.splitext(file.name)[0]
 
-        if not tahun:
-            status = "TIDAK TERDETEKSI"
-            hasil_benar = False
-            salah_tahun = False
-            tidak_terbaca = True
+        hasil = _tentukan_status_otomatis(tahun, nama_gagal)
+        status = hasil["status"]
+        hasil_benar = hasil["hasil_benar"]
+        salah_tahun = hasil["salah_tahun"]
+        tidak_terbaca = hasil["tidak_terbaca"]
+
+        if nama_gagal:
+            cer_val = None
+            wer_val = None
         else:
-            status = "MENUNGGU VERIFIKASI"
-            hasil_benar = True
-            salah_tahun = False
-            tidak_terbaca = False
+            cer_val = 0.0
+            wer_val = 0.0
 
         file.seek(0)
 
         obj = VerifikasiIjazah.objects.create(
             nama=nama_final,
-            nama_ocr=nama_final,
+            nama_ocr=nama_ocr_raw or "",
             nim="-",
             file=file,
             extracted_year=str(tahun) if tahun else "",
@@ -205,10 +292,12 @@ def upload_single(request):
             hasil_benar=hasil_benar,
             salah_tahun=salah_tahun,
             tidak_terbaca=tidak_terbaca,
+            cer=cer_val,
+            wer=wer_val,
             uploaded_by=request.user,
         )
 
-        print("✔ DONE:", file.name, "|", obj.nama, "|", tahun)
+        print("✔ DONE:", file.name, "|", obj.nama, "|", tahun, "|", obj.status)
 
         file_url = obj.file.url if obj.file else None
         file_url = fix_cloudinary_url(file_url, obj.file.name if obj.file else None)
@@ -216,6 +305,7 @@ def upload_single(request):
         return JsonResponse({
             "nama": obj.nama,
             "tahun": obj.extracted_year or "-",
+            "status": obj.status,
             "file_url": file_url,
             "is_image": is_image,
             "is_pdf": is_pdf,
@@ -226,6 +316,7 @@ def upload_single(request):
             shutil.rmtree(temp_dir)
         except:
             pass
+
 
 # ======================
 # HITUNG CER/WER
@@ -277,10 +368,10 @@ def dashboard_admin(request):
     if status:
         if status == "VALID":
             data_list = data_list.filter(status__iexact="VALID")
-        elif status == "MENUNGGU":
-            data_list = data_list.filter(status__icontains="MENUNGGU")
         elif status == "TIDAK MEMENUHI SYARAT":
             data_list = data_list.filter(status__iexact="TIDAK MEMENUHI SYARAT")
+        elif status == "PERLU DIPERIKSA":
+            data_list = data_list.filter(status__iexact="PERLU DIPERIKSA")
         elif status == "TIDAK TERDETEKSI":
             data_list = data_list.filter(status__iexact="TIDAK TERDETEKSI")
 
@@ -292,16 +383,16 @@ def dashboard_admin(request):
     metrics = _get_avg_metrics(all_data)
 
     total_count = all_data.count()
-    valid_count = all_data.filter(status__iexact="VALID").count()
-    accuracy = round((valid_count / total_count) * 100, 2) if total_count else 0
+    terbaca_count = all_data.filter(tidak_terbaca=False).count()
+    accuracy = round((terbaca_count / total_count) * 100, 2) if total_count else 0
 
     return render(request, "dashboard_admin.html", {
         "data": data,
         "total": total_count,
-        "valid": valid_count,
+        "valid": all_data.filter(status__iexact="VALID").count(),
         "not_valid": all_data.filter(status__iexact="TIDAK MEMENUHI SYARAT").count(),
-        "pending": all_data.filter(status__icontains="MENUNGGU").count(),
-        "unknown_year": all_data.filter(status__iexact="TIDAK TERDETEKSI").count(),
+        "perlu_diperiksa": all_data.filter(status__iexact="PERLU DIPERIKSA").count(),
+        "tidak_terdeteksi": all_data.filter(status__iexact="TIDAK TERDETEKSI").count(),
         "today": all_data.filter(created_at__date=timezone.localdate()).count(),
         "accuracy": accuracy,
         "search": search or "",
@@ -311,26 +402,33 @@ def dashboard_admin(request):
 
 
 # ======================
-# VERIFIKASI ADMIN
+# EDIT & VERIFIKASI DATA BERMASALAH
 # ======================
-@login_required(login_url="login")
-def verifikasi_valid(request, id):
-    data = get_object_or_404(VerifikasiIjazah, id=id)
-    data.status = "VALID"
-    _update_metrics(data)
-    data.save()
-    page = request.GET.get("page", "1")
-    return redirect(f"/dashboard/?page={page}")
+def edit_verifikasi(request):
+    if request.method == "POST":
+        item_id = request.POST.get("id")
+        nama = request.POST.get("nama")
+        tahun = request.POST.get("tahun")
+        page = request.POST.get("page", "1")
 
+        item = VerifikasiIjazah.objects.get(id=item_id)
+        item.nama = nama
+        item.extracted_year = tahun
 
-@login_required(login_url="login")
-def verifikasi_tidak_sesuai(request, id):
-    data = get_object_or_404(VerifikasiIjazah, id=id)
-    data.status = "TIDAK MEMENUHI SYARAT"
-    _update_metrics(data)
-    data.save()
-    page = request.GET.get("page", "1")
-    return redirect(f"/dashboard/?page={page}")
+        nama_gagal = _is_nama_gagal(nama)
+        hasil = _tentukan_status_otomatis(tahun, nama_gagal)
+        item.status = hasil["status"]
+        item.hasil_benar = hasil["hasil_benar"]
+        item.salah_tahun = hasil["salah_tahun"]
+        item.tidak_terbaca = hasil["tidak_terbaca"]
+
+        _update_metrics(item)
+        item.save()
+
+        return redirect(f"/dashboard/?page={page}")
+
+    return redirect("dashboard_admin")
+
 
 # ======================
 # REPORTS
@@ -341,7 +439,6 @@ def reports_admin(request):
 
 
 def _build_report_data(request):
-    today = timezone.localdate()
     data = VerifikasiIjazah.objects.order_by("-created_at")
 
     search = request.GET.get("search")
@@ -352,10 +449,10 @@ def _build_report_data(request):
     if status:
         if status == "VALID":
             data = data.filter(status__iexact="VALID")
-        elif status == "MENUNGGU":
-            data = data.filter(status__icontains="MENUNGGU")
         elif status == "TIDAK MEMENUHI SYARAT":
             data = data.filter(status__iexact="TIDAK MEMENUHI SYARAT")
+        elif status == "PERLU DIPERIKSA":
+            data = data.filter(status__iexact="PERLU DIPERIKSA")
         elif status == "TIDAK TERDETEKSI":
             data = data.filter(status__iexact="TIDAK TERDETEKSI")
 
@@ -363,52 +460,31 @@ def _build_report_data(request):
     page_number = request.GET.get("page")
     report_rows = paginator.get_page(page_number)
 
-    import datetime
-    start_of_month = timezone.make_aware(
-        datetime.datetime(today.year, today.month, 1)
-    )
-    if today.month == 12:
-        end_of_month = timezone.make_aware(
-            datetime.datetime(today.year + 1, 1, 1)
-        )
-    else:
-        end_of_month = timezone.make_aware(
-            datetime.datetime(today.year, today.month + 1, 1)
-        )
-    
-    month_data = VerifikasiIjazah.objects.filter(
-        created_at__gte=start_of_month,
-        created_at__lt=end_of_month,
-    )
-
-    total_month = month_data.count()
-    valid = month_data.filter(status__iexact="VALID").count()
-    not_valid = month_data.filter(status__iexact="TIDAK MEMENUHI SYARAT").count()
-    pending = month_data.filter(status__icontains="MENUNGGU").count()
-    unknown_year = month_data.filter(status__iexact="TIDAK TERDETEKSI").count()
-
-    accuracy = round((valid / total_month) * 100, 2) if total_month else 0
-
-    total_all = data.count()
-    akurasi_total = round(
-        (data.filter(status__iexact="VALID").count() / total_all) * 100, 2
-    ) if total_all else 0
-
     all_data = VerifikasiIjazah.objects.all()
-    metrics = _get_avg_metrics(data)
+
+    total_all = all_data.count()
+    valid = all_data.filter(status__iexact="VALID").count()
+    not_valid = all_data.filter(status__iexact="TIDAK MEMENUHI SYARAT").count()
+    perlu_diperiksa = all_data.filter(status__iexact="PERLU DIPERIKSA").count()
+    tidak_terdeteksi = all_data.filter(status__iexact="TIDAK TERDETEKSI").count()
+
+    terbaca = all_data.filter(tidak_terbaca=False).count()
+    accuracy = round((terbaca / total_all) * 100, 2) if total_all else 0
+
+    metrics = _get_avg_metrics(all_data)
 
     return {
-        "total_month": total_month,
+        "total_month": total_all,
         "valid": valid,
         "not_valid": not_valid,
-        "pending": pending,
-        "unknown_year": unknown_year,
+        "perlu_diperiksa": perlu_diperiksa,
+        "tidak_terdeteksi": tidak_terdeteksi,
         "accuracy": accuracy,
         "report_rows": report_rows,
-        "akurasi_total": akurasi_total,
+        "akurasi_total": accuracy,
         "search": search or "",
         "status": status or "",
-        "total": all_data.count(),
+        "total": total_all,
         **metrics,
     }
 
@@ -430,12 +506,10 @@ def download_reports_excel(request):
     if status_filter:
         if status_filter == "VALID":
             all_rows = all_rows.filter(status__iexact="VALID")
-        elif status_filter == "MENUNGGU":
-            all_rows = all_rows.filter(status__icontains="MENUNGGU")
         elif status_filter == "TIDAK MEMENUHI SYARAT":
             all_rows = all_rows.filter(status__iexact="TIDAK MEMENUHI SYARAT")
-        elif status_filter == "TIDAK TERDETEKSI":
-            all_rows = all_rows.filter(status__iexact="TIDAK TERDETEKSI")
+        elif status_filter == "PERLU DIPERIKSA":
+            all_rows = all_rows.filter(status__iexact="PERLU DIPERIKSA")
 
     wb = Workbook()
     ws = wb.active
@@ -452,7 +526,7 @@ def download_reports_excel(request):
 
     ws.merge_cells("A1:G1")
     title_cell = ws["A1"]
-    title_cell.value = "LAPORAN VERIFIKASI IJAZAH - REGMABA UNSRAT"
+    title_cell.value = "LAPORAN VERIFIKASI IJAZAH UNSRAT"
     title_cell.font = Font(bold=True, size=14, color="10B8CC")
     title_cell.alignment = Alignment(horizontal="center")
 
@@ -464,11 +538,13 @@ def download_reports_excel(request):
     ws["A4"].value = "RINGKASAN"
     ws["A4"].font = Font(bold=True, size=11)
 
-    summary_labels = ["Total", "Valid", "Tidak Valid", "Menunggu", "Tidak Terdeteksi",
-                       "CER Rata-rata", "WER Rata-rata", "Akurasi CER", "Akurasi WER"]
+    summary_labels = ["Total", "Valid", "Tidak Memenuhi Syarat", "Perlu Diperiksa",
+                       "Akurasi Sistem", "CER Rata-rata", "WER Rata-rata",
+                       "Akurasi CER", "Akurasi WER"]
     summary_values = [
-        report_data["total_month"], report_data["valid"], report_data["not_valid"],
-        report_data["pending"], report_data["unknown_year"],
+        report_data["total"], report_data["valid"], report_data["not_valid"],
+        report_data["perlu_diperiksa"],
+        f"{report_data['accuracy']}%",
         f"{report_data['avg_cer']}%", f"{report_data['avg_wer']}%",
         f"{report_data['akurasi_cer']}%", f"{report_data['akurasi_wer']}%",
     ]
@@ -535,12 +611,10 @@ def download_reports_pdf(request):
     if status_filter:
         if status_filter == "VALID":
             all_rows = all_rows.filter(status__iexact="VALID")
-        elif status_filter == "MENUNGGU":
-            all_rows = all_rows.filter(status__icontains="MENUNGGU")
         elif status_filter == "TIDAK MEMENUHI SYARAT":
             all_rows = all_rows.filter(status__iexact="TIDAK MEMENUHI SYARAT")
-        elif status_filter == "TIDAK TERDETEKSI":
-            all_rows = all_rows.filter(status__iexact="TIDAK TERDETEKSI")
+        elif status_filter == "PERLU DIPERIKSA":
+            all_rows = all_rows.filter(status__iexact="PERLU DIPERIKSA")
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -554,8 +628,7 @@ def download_reports_pdf(request):
 
     title_style = ParagraphStyle("CustomTitle", parent=styles["Heading1"],
         fontSize=16, textColor=colors.HexColor("#10B8CC"), alignment=1, spaceAfter=6)
-    elements.append(Paragraph("LAPORAN VERIFIKASI IJAZAH", title_style))
-    elements.append(Paragraph("REGMABA UNSRAT", title_style))
+    elements.append(Paragraph("LAPORAN VERIFIKASI IJAZAH UNSRAT", title_style))
 
     subtitle_style = ParagraphStyle("Subtitle", parent=styles["Normal"],
         fontSize=10, alignment=1, textColor=colors.grey, spaceAfter=20)
@@ -563,15 +636,15 @@ def download_reports_pdf(request):
     elements.append(Paragraph(f"Tanggal: {tanggal}", subtitle_style))
 
     summary_data = [
-        ["Total Bulan Ini", str(report_data["total_month"]),
+        ["Total", str(report_data["total"]),
          "Valid", str(report_data["valid"]),
-         "Tidak Valid", str(report_data["not_valid"])],
-        ["Menunggu", str(report_data["pending"]),
-         "Tidak Terdeteksi", str(report_data["unknown_year"]),
-         "", ""],
-        ["CER Rata-rata", f"{report_data['avg_cer']}%",
-         "WER Rata-rata", f"{report_data['avg_wer']}%",
-         "Akurasi CER", f"{report_data['akurasi_cer']}%"],
+         "Tidak Memenuhi Syarat", str(report_data["not_valid"])],
+        ["Perlu Diperiksa", str(report_data["perlu_diperiksa"]),
+         "Akurasi Sistem", f"{report_data['accuracy']}%",
+         "CER Rata-rata", f"{report_data['avg_cer']}%"],
+        ["WER Rata-rata", f"{report_data['avg_wer']}%",
+         "Akurasi CER", f"{report_data['akurasi_cer']}%",
+         "Akurasi WER", f"{report_data['akurasi_wer']}%"],
     ]
 
     summary_table = Table(summary_data, colWidths=[4*cm, 3*cm, 4*cm, 3*cm, 4*cm, 3*cm])
@@ -651,33 +724,9 @@ def view_document(request, document_id):
         "page": page,
         "total": all_data.count(),
         "valid": all_data.filter(status__iexact="VALID").count(),
-        "pending": all_data.filter(status__icontains="MENUNGGU").count(),
+        "not_valid": all_data.filter(status__iexact="TIDAK MEMENUHI SYARAT").count(),
+        "perlu_diperiksa": all_data.filter(status__iexact="PERLU DIPERIKSA").count(),
     })
-
-
-# ======================
-# EDIT VERIFIKASI
-# ======================
-def edit_verifikasi(request):
-    if request.method == "POST":
-        item_id = request.POST.get("id")
-        nama = request.POST.get("nama")
-        tahun = request.POST.get("tahun")
-        status = request.POST.get("status")
-        page = request.POST.get("page", "1")
-
-        item = VerifikasiIjazah.objects.get(id=item_id)
-        item.nama = nama
-        item.extracted_year = tahun
-        if status:
-            item.status = status
-
-        _update_metrics(item)
-        item.save()
-
-        return redirect(f"/dashboard/?page={page}")
-
-    return redirect("dashboard_admin")
 
 
 # ======================
@@ -688,17 +737,17 @@ def fix_cloudinary_url(url, filename):
         return url
 
     is_pdf = False
-    
+
     if filename and filename.lower().endswith('.pdf'):
         is_pdf = True
     elif '/image/upload/' in url:
         image_exts = ('.jpg', '.jpeg', '.png', '.gif', '.webp')
         if not any(url.lower().endswith(ext) for ext in image_exts):
             is_pdf = True
-    
+
     if is_pdf and '/image/upload/' in url:
         return url.replace('/image/upload/', '/image/upload/pg_1/') + '.jpg'
-    
+
     return url
 
 
@@ -726,6 +775,7 @@ def login_admin(request):
 def logout_admin(request):
     logout(request)
     return redirect("login")
+
 
 # ======================
 # KELOLA USER (SUPER ADMIN ONLY)
@@ -841,6 +891,7 @@ def delete_user(request, user_id):
     target_user.delete()
     return redirect("manage_users")
 
+
 # ======================
 # SETTINGS
 # ======================
@@ -891,7 +942,8 @@ def settings_admin(request):
         },
         "total": all_data.count(),
         "valid": all_data.filter(status__iexact="VALID").count(),
-        "pending": all_data.filter(status__icontains="MENUNGGU").count(),
+        "not_valid": all_data.filter(status__iexact="TIDAK MEMENUHI SYARAT").count(),
+        "perlu_diperiksa": all_data.filter(status__iexact="PERLU DIPERIKSA").count(),
         "success": success,
         "error": error,
     })

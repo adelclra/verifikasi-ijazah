@@ -25,7 +25,7 @@ ocr = PaddleOCR(
 
 
 # =========================
-# KNOWN CITY NAMES 
+# KNOWN CITY NAMES
 # =========================
 KNOWN_CITIES = {
     "tomohon", "manado", "bitung", "jakarta", "surabaya", "bandung",
@@ -35,45 +35,6 @@ KNOWN_CITIES = {
     "ambon", "jayapura", "kupang", "mataram", "denpasar", "gorontalo",
     "ternate", "manokwari", "sorong", "palu", "mamuju", "tondano",
     "langowan", "airmadidi", "amurang", "kotamobagu", "minahasa",
-}
-
-# =========================
-# COMMON INDONESIAN NAMES
-# =========================
-COMMON_FIRST_NAMES = {
-    "adelia": "Adelia", "adelina": "Adelina", "angela": "Angela",
-    "cecilia": "Cecilia", "cynthia": "Cynthia", "delvina": "Delvina",
-    "felicia": "Felicia", "gloria": "Gloria", "jessica": "Jessica",
-    "maria": "Maria", "natalia": "Natalia", "patricia": "Patricia",
-    "priscilla": "Priscilla", "sancia": "Sancia", "stella": "Stella",
-    "theresia": "Theresia", "victoria": "Victoria", "yolanda": "Yolanda",
-    "michael": "Michael", "jonathan": "Jonathan", "christian": "Christian",
-    "daniel": "Daniel", "gabriel": "Gabriel", "joshua": "Joshua",
-    "samuel": "Samuel", "nicholas": "Nicholas", "william": "William",
-    "alexander": "Alexander", "ferdinand": "Ferdinand", "hendrick": "Hendrick",
-    "reymond": "Reymond", "raymond": "Raymond", "steven": "Steven",
-    "franklin": "Franklin", "gerald": "Gerald", "clarita": "Clarita",
-    "clara": "Clara", "claudia": "Claudia", "melisa": "Melisa",
-    "melissa": "Melissa", "olivia": "Olivia", "regina": "Regina",
-}
-
-COMMON_SURNAMES = {
-    "langitan": "Langitan", "lontoh": "Lontoh", "lumowa": "Lumowa",
-    "mamahit": "Mamahit", "mamuaya": "Mamuaya", "mandagi": "Mandagi",
-    "mangindaan": "Mangindaan", "manoppo": "Manoppo", "maramis": "Maramis",
-    "mokoginta": "Mokoginta", "mokodompit": "Mokodompit",
-    "pangkey": "Pangkey", "pangemanan": "Pangemanan",
-    "pakasi": "Pakasi", "paruntu": "Paruntu", "pondaag": "Pondaag",
-    "rarung": "Rarung", "rompas": "Rompas", "runtuwene": "Runtuwene",
-    "sajow": "Sajow", "sendow": "Sendow", "sondakh": "Sondakh",
-    "sumual": "Sumual", "supit": "Supit", "tamon": "Tamon",
-    "tangkudung": "Tangkudung", "tendean": "Tendean", "ticoalu": "Ticoalu",
-    "tulung": "Tulung", "tumbelaka": "Tumbelaka", "tumewu": "Tumewu",
-    "tungka": "Tungka", "walewangko": "Walewangko", "wenas": "Wenas",
-    "worang": "Worang", "wowor": "Wowor", "wullur": "Wullur",
-    "kalalo": "Kalalo", "kalangi": "Kalangi", "karinda": "Karinda",
-    "kaunang": "Kaunang", "kindangen": "Kindangen", "koleangan": "Koleangan",
-    "komaling": "Komaling", "komalig": "Komalig",
 }
 
 
@@ -151,48 +112,6 @@ def extract_year(text):
 
 
 # =========================
-# CORRECT COMMON OCR ERRORS
-# =========================
-def correct_ocr_name(name):
-    if not name:
-        return name
-
-    words = name.split()
-    corrected = []
-
-    for word in words:
-        w_lower = word.lower()
-
-        best_match = None
-        best_score = 0
-
-        all_names = {**COMMON_FIRST_NAMES, **COMMON_SURNAMES}
-        for known, proper in all_names.items():
-            if abs(len(w_lower) - len(known)) > 2:
-                continue
-
-            common = 0
-            temp = known
-            for ch in w_lower:
-                idx = temp.find(ch)
-                if idx != -1:
-                    common += 1
-                    temp = temp[:idx] + temp[idx + 1:]
-
-            score = common / max(len(known), len(w_lower))
-            if score > best_score and score >= 0.7:
-                best_score = score
-                best_match = proper
-
-        if best_match and best_score >= 0.7:
-            corrected.append(best_match)
-        else:
-            corrected.append(word.title())
-
-    return " ".join(corrected)
-
-
-# =========================
 # CLEAN NAME
 # =========================
 def clean_name(name):
@@ -257,98 +176,6 @@ def extract_name_between_markers(text):
                 return " ".join(words[:6]).title()
 
     return None
-
-
-# =========================
-# EXTRACT PARENT SURNAME 
-# =========================
-def extract_parent_surname(text):
-    text_clean = text.replace("\n", " ")
-
-    patterns = [
-        r"orang\s+tua\s*/?\s*wali\s*[:/]?\s*([A-Za-z.\s]{3,}?)(?:\s+nomor|\s+\d{5,}|\s+LULUS|\s+dari)",
-        r"orang\s+tua\s*[:/]?\s*([A-Za-z.\s]{3,}?)(?:\s+nomor|\s+\d{5,}|\s+LULUS|\s+dari)",
-        r"lahir\s+([A-Za-z.\s]{3,}?)\s+nama\s+orang\s+tua",
-        r"lahir\s+([A-Za-z.\s]{3,}?)\s+nama\s+orang",
-        r"lahir\s+(.{3,}?)\s+nama\s+orang",
-    ]
-
-    for pattern in patterns:
-        match = re.search(pattern, text_clean, re.IGNORECASE)
-        if match:
-            raw = match.group(1).strip()
-            raw = re.sub(r"[^A-Za-z\s]", " ", raw)
-            raw = re.sub(r"\s+", " ", raw).strip()
-            words = [w for w in raw.split() if len(w) >= 3]
-            if words:
-                surname = words[-1].title()
-                for known, proper in COMMON_SURNAMES.items():
-                    if len(surname) < 4:
-                        continue
-                    s_lower = surname.lower()
-                    if s_lower == known:
-                        return proper
-                    if len(s_lower) >= 4 and known.endswith(s_lower):
-                        return proper
-                    if len(s_lower) >= 4 and known.startswith(s_lower):
-                        return proper
-                    common = 0
-                    temp = known
-                    for ch in s_lower:
-                        idx = temp.find(ch)
-                        if idx != -1:
-                            common += 1
-                            temp = temp[:idx] + temp[idx + 1:]
-                    score = common / max(len(known), len(s_lower))
-                    if score >= 0.7:
-                        return proper
-                return surname
-
-    return None
-
-
-# =========================
-# FIX SURNAME WITH PARENT
-# =========================
-def fix_surname_with_parent(nama_siswa, parent_surname):
-    if not nama_siswa or not parent_surname:
-        return nama_siswa
-
-    words = nama_siswa.split()
-    if len(words) < 2:
-        return nama_siswa
-
-    last_word = words[-1].lower()
-    parent_low = parent_surname.lower()
-
-    if last_word == parent_low:
-        return nama_siswa
-
-    if min(len(last_word), len(parent_low)) < 4:
-        return nama_siswa
-
-    if len(last_word) > len(parent_low):
-        return nama_siswa
-
-    if last_word in parent_low or parent_low.endswith(last_word):
-        words[-1] = parent_surname.title()
-        return " ".join(words)
-
-    common = 0
-    temp = parent_low
-    for ch in last_word:
-        idx = temp.find(ch)
-        if idx != -1:
-            common += 1
-            temp = temp[:idx] + temp[idx + 1:]
-
-    similarity = common / max(len(parent_low), len(last_word))
-
-    if similarity >= 0.55:
-        words[-1] = parent_surname.title()
-        return " ".join(words)
-
-    return nama_siswa
 
 
 # =========================
@@ -438,7 +265,7 @@ def paddle_ocr_structured(image):
 
 
 # =========================
-# MAIN FUNCTION 
+# MAIN FUNCTION
 # =========================
 def extract_data(file_path):
     try:
@@ -476,28 +303,18 @@ def extract_data(file_path):
         if not tahun and tahun_ai:
             tahun = tahun_ai
 
-        parent_surname = extract_parent_surname(text_full)
-        print(f"\n=== PARENT SURNAME === {parent_surname}")
-
         if is_valid_name(nama_ai) and len(nama_ai.split()) >= 2:
-            nama_fixed = clean_name(nama_ai)
-            nama_fixed = correct_ocr_name(nama_fixed)
-            if parent_surname:
-                nama_fixed = fix_surname_with_parent(nama_fixed, parent_surname)
-            return (nama_fixed, tahun, text_full)
+            return (nama_ai.strip().title(), tahun, text_full)
 
         nama_marker = extract_name_between_markers(text_full)
         if is_valid_name(nama_marker) and len(nama_marker.split()) >= 2:
-            nama_marker = correct_ocr_name(nama_marker)
-            if parent_surname:
-                nama_marker = fix_surname_with_parent(nama_marker, parent_surname)
-            return (nama_marker, tahun, text_full)
+            return (nama_marker.strip().title(), tahun, text_full)
 
         if nama_ai and len(nama_ai.strip()) >= 3:
-            return (correct_ocr_name(nama_ai.strip().title()), tahun, text_full)
+            return (nama_ai.strip().title(), tahun, text_full)
 
         if nama_marker and len(nama_marker.strip()) >= 3:
-            return (correct_ocr_name(nama_marker.strip().title()), tahun, text_full)
+            return (nama_marker.strip().title(), tahun, text_full)
 
         return ("Perlu Verifikasi Manual", tahun, text_full)
 

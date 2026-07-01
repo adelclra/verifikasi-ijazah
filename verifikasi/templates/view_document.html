@@ -2,10 +2,10 @@
 <!doctype html>
 <html>
   <head>
-    <title>Lihat Dokumen - Verifikasi Ijazah</title>
+    <title>Lihat Dokumen - VERIFIKASI IJAZAH UNSRAT</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="{% static 'images/logo-unsrat2.png' %}" />
-    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=50" />
+    <link rel="stylesheet" href="{% static 'css/styleadmin.css' %}?v=39" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
@@ -30,7 +30,7 @@
         </div>
         <div class="nav-left">
           <img src="{% static 'images/logo-unsrat2.png' %}" class="logo" />
-          <div class="nav-text"><h2>REGMABA UNSRAT</h2></div>
+          <div class="nav-text"><h2>VERIFIKASI IJAZAH UNSRAT</h2></div>
         </div>
       </div>
     </nav>
@@ -42,7 +42,6 @@
     ></div>
 
     <div class="container">
-      <!-- SIDEBAR -->
       <div class="sidebar">
         <div class="sidebar-profile">
           <div class="sidebar-avatar">
@@ -65,14 +64,24 @@
           ><i class="fas fa-chart-line"></i> Laporan</a
         >
         <p class="sidebar-label">Kelola</p>
-        <a href="{% url 'home' %}" class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+        <a
+          href="{% url 'home' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+        >
           <i class="fas fa-upload"></i> Halaman Unggah
         </a>
-        <a href="{% url 'settings_admin' %}" class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}">
+        <a
+          href="{% url 'settings_admin' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'settings_admin' %}active{% endif %}"
+        >
           <i class="fas fa-cog"></i> Pengaturan
         </a>
         {% if request.user.is_superuser %}
-        <a href="{% url 'manage_users' %}" class="menu-item {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}"><i class="fas fa-users-cog"></i> Kelola User</a>
+        <a
+          href="{% url 'manage_users' %}"
+          class="menu-item {% if request.resolver_match.url_name == 'manage_users' %}active{% endif %}"
+          ><i class="fas fa-users-cog"></i> Kelola User</a
+        >
         {% endif %}
         <div class="sidebar-footer">
           <div class="sidebar-stats">
@@ -85,8 +94,12 @@
               ><span class="sidebar-stat-label">Valid</span>
             </div>
             <div class="sidebar-stat-item">
-              <span class="sidebar-stat-value">{{ pending|default:"0" }}</span
-              ><span class="sidebar-stat-label">Menunggu</span>
+              <span class="sidebar-stat-value">{{ not_valid|default:"0" }}</span
+              ><span class="sidebar-stat-label">Tidak Memenuhi Syarat</span>
+            </div>
+            <div class="sidebar-stat-item">
+              <span class="sidebar-stat-value">{{ perlu_diperiksa|default:"0" }}</span
+              ><span class="sidebar-stat-label">Perlu Diperiksa</span>
             </div>
           </div>
           <a href="{% url 'logout' %}" class="sidebar-logout"
@@ -95,16 +108,19 @@
         </div>
       </div>
 
-      <!-- MAIN -->
       <div class="main">
-        <h2><i class="fas fa-file-alt" style="color: var(--color-primary);"></i> Detail Verifikasi Dokumen</h2>
-        <p class="section-subtitle">Informasi hasil verifikasi dokumen ijazah</p>
+        <h2>
+          <i class="fas fa-file-alt" style="color: var(--color-primary)"></i>
+          Detail Verifikasi Dokumen
+        </h2>
+        <p class="section-subtitle">
+          Informasi hasil verifikasi dokumen ijazah
+        </p>
 
         <a href="{% url 'dashboard_admin' %}?page={{ page }}" class="btn-back">
           <i class="fas fa-arrow-left"></i> Kembali ke Dashboard
         </a>
 
-        <!-- FILE -->
         <div class="card section-card">
           <div class="card-header">
             <h3><i class="fas fa-file"></i> File Dokumen</h3>
@@ -123,11 +139,8 @@
                 <div class="modern-file-info">
                   <h4>{{ item.file.name|cut:"ijazah/" }}</h4>
                   <p>
-                    {% if item.file.name|lower|slice:"-4:" == ".pdf" %}
-                    Dokumen PDF
-                    {% else %}
-                    Dokumen Gambar
-                    {% endif %}
+                    {% if item.file.name|lower|slice:"-4:" == ".pdf" %}Dokumen
+                    PDF{% else %}Dokumen Gambar{% endif %}
                   </p>
                 </div>
               </div>
@@ -141,7 +154,6 @@
           </div>
         </div>
 
-        <!-- INFORMASI -->
         <div class="card section-card doc-info-card">
           <div class="card-header">
             <h3><i class="fas fa-info-circle"></i> Informasi Verifikasi</h3>
@@ -153,9 +165,7 @@
             </div>
             <div class="form-row">
               <label><i class="fas fa-calendar"></i> Tahun Terdeteksi</label
-              ><span class="form-value"
-                >{{ item.extracted_year|default:"-" }}</span
-              >
+              ><span class="form-value">{{ item.extracted_year|default:"-" }}</span>
             </div>
             <div class="form-row">
               <label><i class="fas fa-tag"></i> Status</label
@@ -163,45 +173,25 @@
             </div>
             <div class="form-row">
               <label><i class="fas fa-font"></i> CER</label
-              ><span class="form-value"
-                >{% if item.cer != None %}
-                {{ item.cer|floatformat:2 }}
-                %
-                {% else%}
-                -
-                {% endif %}
-                </span
-              >
+              ><span class="form-value">{% if item.cer_persen != None %}{{ item.cer_persen|floatformat:2 }} %{% else %}-{% endif %}</span>
             </div>
             <div class="form-row">
               <label><i class="fas fa-align-left"></i> WER</label
-              ><span class="form-value"
-                >{% if item.wer != None %}
-                {{ item.wer|floatformat:2 }}
-                %
-                {% else%}
-                -
-                {% endif %}
-                </span
-              >
+              ><span class="form-value">{% if item.wer_persen != None %}{{ item.wer_persen|floatformat:2 }} %{% else %}-{% endif %}</span>
             </div>
             <div class="form-row">
               <label><i class="fas fa-clock"></i> Tanggal Unggah</label
-              ><span class="form-value"
-                >{{ item.created_at|date:"Y-m-d H:i" }}</span
-              >
+              ><span class="form-value">{{ item.created_at|date:"Y-m-d H:i" }}</span>
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="admin-footer">
       <div class="admin-footer-content">
         <p>
-          <i class="fas fa-university"></i> REGMABA UNSRAT &mdash; Sistem
-          Verifikasi Tahun Ijazah &copy; 2026 Universitas Sam Ratulangi
+          <i class="fas fa-university"></i> VERIFIKASI IJAZAH UNSRAT &copy; 2026 Universitas Sam Ratulangi
         </p>
       </div>
     </footer>

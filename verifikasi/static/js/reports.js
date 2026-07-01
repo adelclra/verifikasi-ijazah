@@ -4,9 +4,19 @@ let pieChartInstance = null;
 document.addEventListener("DOMContentLoaded", function () {
   const rawData = JSON.parse(document.getElementById("chart-data").textContent);
 
-  const dataValues = [rawData.valid, rawData.not_valid, rawData.pending, rawData.unknown_year || 0];
-  const labels = ["Valid", "Tidak Valid", "Menunggu", "Tidak Terdeteksi"];
-  const bgColors = ["#27ae60", "#e74c3c", "#3498db", "#f39c12"];
+  const dataValues = [
+    rawData.valid,
+    rawData.not_valid,
+    rawData.perlu_diperiksa,
+    rawData.tidak_terdeteksi
+  ];
+  const labels = [
+    "Valid",
+    "Tidak Memenuhi Syarat",
+    "Perlu Diperiksa",
+    "Tidak Terdeteksi"
+  ];
+  const bgColors = ["#27ae60", "#e74c3c", "#f39c12", "#3498db"];
 
   if (barChartInstance) barChartInstance.destroy();
   if (pieChartInstance) pieChartInstance.destroy();

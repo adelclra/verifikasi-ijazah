@@ -45,15 +45,24 @@ body {
   margin: 0;
   padding: 0 24px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
   height: 100%;
+  gap: 12px;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  order: 2;
 }
 
 .nav-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
+  margin-right: auto;
+  order: 1;
 }
 
 .logo {
@@ -233,10 +242,11 @@ body {
   border-top: 1px solid var(--color-border-light);
 }
 .sidebar-stats {
-  display: flex;
-  justify-content: space-around;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 8px;
   margin-bottom: 12px;
-  padding: 10px 0;
+  padding: 12px 10px;
   background: var(--color-bg);
   border-radius: 10px;
 }
@@ -244,20 +254,24 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 3px;
+  min-width: 0;
+  text-align: center;
 }
 .sidebar-stat-value {
   font-size: 16px;
   font-weight: 700;
   color: var(--color-primary-dark);
+  line-height: 1.1;
 }
 .sidebar-stat-label {
-  font-size: 10px;
+  font-size: 9.5px;
   color: var(--color-text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  line-height: 1.25;
+  word-break: break-word;
 }
-
 .sidebar-logout {
   display: flex;
   align-items: center;
@@ -1534,6 +1548,7 @@ tr:hover td {
 
   .stats {
     grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
   }
 
   .chart-wrapper {
@@ -1588,13 +1603,14 @@ tr:hover td {
     font-size: 12px;
   }
   .stats {
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
   }
-  .card {
-    padding: 12px 10px;
+
+  .stats:nth-of-type(2) {
+    grid-template-columns: repeat(4, 1fr);
   }
-  .card p {
+  card p {
     font-size: 10.5px;
     gap: 4px;
   }
@@ -1762,6 +1778,26 @@ tr:hover td {
 }
 
 /* ============================================
+   RESPONSIVE — Tablet Small (768px - 520px)
+   ============================================ */
+@media (max-width: 600px) and (min-width: 521px) {
+  .stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .stats:nth-of-type(2) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  card p {
+    font-size: 10px;
+  }
+  .card h3 {
+    font-size: 16px;
+  }
+}
+
+/* ============================================
    RESPONSIVE — Small Mobile (max 520px)
    ============================================ */
 @media (max-width: 520px) {
@@ -1803,12 +1839,13 @@ tr:hover td {
   }
   .stats {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 7px;
   }
-  .card {
-    padding: 12px 8px;
+
+  .stats:nth-of-type(2) {
+    grid-template-columns: repeat(2, 1fr);
   }
-  .card p {
+  card p {
     font-size: 10px;
   }
   .card h3 {
@@ -1924,11 +1961,16 @@ tr:hover td {
   .hero p {
     font-size: 10px;
   }
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .stats:nth-of-type(2) {
+    grid-template-columns: repeat(2, 1fr);
+  }
   .card {
     padding: 10px 6px;
-  }
-  .card p {
-    font-size: 9px;
   }
   .card h3 {
     font-size: 15px;

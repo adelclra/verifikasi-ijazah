@@ -28,57 +28,66 @@ def extract_with_qwen(text):
                         "role": "system",
                         "content": """Anda adalah AI pembaca hasil OCR ijazah Indonesia.
 
-Ekstrak NAMA LENGKAP SISWA dan TAHUN dari hasil OCR ijazah.
+Tugas Anda: mengekstrak NAMA LENGKAP SISWA dan TAHUN dari hasil OCR ijazah.
 
 STRUKTUR IJAZAH INDONESIA:
 1. Header: "KEMENTERIAN PENDIDIKAN...", "IJAZAH", "SEKOLAH MENENGAH ATAS"
-2. "TAHUN AJARAN 20XX/20XX"
+2. "TAHUN AJARAN 20XX/20XX"s
 3. "Kepala [nama sekolah]" — ABAIKAN
 4. "menerangkan bahwa:" lalu "nama :" — NAMA SISWA ADA DI SINI
 5. "tempat dan tanggal lahir :" — ABAIKAN
-6. "nama orang tua/wali :" — BUKAN nama siswa, tapi PETUNJUK MARGA
+6. "nama orang tua/wali :" — BUKAN nama siswa, tapi PETUNJUK MARGA siswa
 
-ATURAN:
-1. Ambil HANYA nama siswa (setelah "nama :" dan sebelum "tempat")
-2. JANGAN ambil nama kota, sekolah, kepala sekolah, atau orang tua
-3. Periksa "nama orang tua/wali" — marga orang tua SAMA dengan marga siswa
+ATURAN PENGAMBILAN NAMA:
+1. Nama siswa berada di sekitar kata "nama" dan sebelum "tempat dan tanggal lahir"
+2. PENTING: karena OCR membaca secara horizontal, nama siswa bisa muncul SEBELUM atau SESUDAH label "nama :"
+3. Nama siswa adalah nama orang (2-5 kata), BUKAN nama tempat atau tanggal
+4. Jika teks antara "nama" dan "tempat" terlihat seperti nama kota atau tanggal, cari nama orang di SEBELUM kata "nama"
+5. Gunakan marga orang tua sebagai petunjuk: marga siswa biasanya sama dengan marga orang tua
+6. JANGAN ambil nama kota, sekolah, kepala sekolah, atau orang tua sebagai nama siswa
 
-KOREKSI OCR — SANGAT PENTING:
-OCR sering membuat kesalahan berikut pada nama:
-- "ADEAIA" seharusnya "ADELIA" (huruf L dan I terbaca A)
-- "FEAICIA" seharusnya "FELICIA"
-- "ANCEAA" seharusnya "ANGELA"
-- "PATRTCTA" seharusnya "PATRICIA"
-- Huruf dipisah titik: "S.A.N.C.I.A" → gabung jadi "SANCIA"
-- Fragmen kata: "A.LIC.A" → gabung jadi "ALICA"
-- "J" dan "V" sering tertukar
-- "l" dan "i" dan "1" sering tertukar
-- "rn" terbaca "m", "cl" terbaca "d"
-- Huruf pertama marga kadang hilang: "Angitan" → "Langitan"
+PEMBERSIHAN ARTEFAK OCR (WAJIB):
+- Huruf yang dipisah titik adalah SATU KATA. Gabungkan: "S.A.N.C.I.A" menjadi "SANCIA", "A.L.CI.A" menjadi "ALCIA"
+- Hapus semua titik di antara huruf dalam nama
+- Pisahkan kata-kata yang seharusnya terpisah berdasarkan konteks: "SANCIAALCIA" seharusnya "SANCIA ALCIA"
+- Hapus karakter non-huruf yang bukan pemisah kata
 
-ATURAN KOREKSI:
-1. Gabungkan huruf/fragmen yang dipisah titik menjadi SATU KATA
-2. Cocokkan dengan nama Indonesia yang umum dan perbaiki ejaannya
-3. Marga siswa = marga orang tua — gunakan ejaan orang tua jika lebih jelas
-4. Jika nama terlihat salah tapi mirip nama umum, PERBAIKI ke nama yang benar
-5. Nama yang umum di Sulawesi Utara: Langitan, Manoppo, Pangkey, Rompas, Sondakh, Tendean, Tumbelaka, Wenas, Wowor, Kalangi, Kaunang, dll.
+KOREKSI HURUF TUNGGAL YANG SERING KELIRU DI OCR:
+- "l" (huruf L kecil) dan "I" (huruf i besar) sering tertukar
+- "V" dan "J" sering tertukar  
+- "rn" terbaca "m"
+- "cl" terbaca "d"
+- "c" terbaca "l"
+Perbaiki HANYA jika konteks huruf sekitarnya jelas menunjukkan kesalahan. Jika ragu, PERTAHANKAN huruf asli.
+
+PENGGUNAAN MARGA ORANG TUA:
+- Marga siswa biasanya SAMA dengan marga orang tua/wali
+- Jika marga siswa terbaca tidak jelas tapi marga orang tua terbaca jelas, gunakan ejaan marga orang tua untuk marga siswa
+- Contoh: siswa terbaca "CANGITAN", orang tua terbaca "Langitan" → marga siswa = "LANGITAN"
+
+LARANGAN — JANGAN LAKUKAN INI:
+- JANGAN mengganti nama depan/tengah siswa ke nama lain yang "terdengar lebih umum"
+- JANGAN menebak nama yang tidak terbaca — jika benar-benar tidak bisa dibaca, tulis apa adanya
+- "ADEAIA" BUKAN "ADELIA" kecuali konteks huruf sekitarnya sangat jelas menunjukkan itu huruf L dan I
+- "MIRACLE" BUKAN "MICHAEL" — ini nama yang berbeda, jangan ganti
+- "SABINA" BUKAN "SANCIA" — ini nama yang berbeda, jangan ganti
 
 TAHUN:
 - Ambil tahun terakhir dari "TAHUN AJARAN 20XX/20XX"
 - Atau tahun dari tanggal penerbitan ijazah
 
 FORMAT JAWABAN (HANYA JSON, tanpa penjelasan):
-{"nama": "Nama Lengkap Siswa Yang Sudah Dikoreksi", "tahun": "2024"}
+{"nama": "Nama Lengkap Siswa", "tahun": "2024"}
 
 Jika tidak ditemukan:
 {"nama": null, "tahun": null}"""
                     },
                     {
                         "role": "user",
-                        "content": f"Ekstrak nama siswa dan tahun dari OCR ijazah berikut. WAJIB koreksi kesalahan OCR pada nama.\n\nOCR:\n{text[:4000]}"
+                        "content": f"Ekstrak nama siswa dan tahun dari OCR ijazah berikut.\n\nOCR:\n{text[:4000]}"
                     }
                 ],
-                "temperature": 0.05,
+                "temperature": 0,
                 "max_tokens": 100
             },
             timeout=60

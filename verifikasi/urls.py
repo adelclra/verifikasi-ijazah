@@ -21,8 +21,5 @@ urlpatterns = [
     path("settings/users/delete/<int:user_id>/", views.delete_user, name="delete_user"),
 
     path("view-document/<int:document_id>/", views.view_document, name="view_document"),
-
-    path("verifikasi-valid/<int:id>/", views.verifikasi_valid, name="verifikasi_valid"),
-    path("verifikasi-tidak-sesuai/<int:id>/", views.verifikasi_tidak_sesuai, name="verifikasi_tidak_sesuai"),
     path("edit-verifikasi/", views.edit_verifikasi, name="edit_verifikasi"),
 ]

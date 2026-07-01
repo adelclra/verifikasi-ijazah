@@ -1,5 +1,4 @@
-# Sistem Verifikasi Tahun Ijazah Berbasis Web
-## REGMABA UNSRAT
+# Sistem Verifikasi Tahun Ijazah pada Tes Mandiri UNSRAT Berbasis Web
 
 Sistem ini merupakan aplikasi berbasis web yang digunakan untuk melakukan verifikasi tahun ijazah secara otomatis menggunakan teknologi OCR (Optical Character Recognition) pada Sistem REGMABA Universitas Sam Ratulangi.
 

@@ -13,6 +13,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # =========================
+# PyMySQL sebagai pengganti mysqlclient
+# =========================
+import pymysql
+pymysql.install_as_MySQLdb()
+
+# =========================
 # SECURITY
 # =========================
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
@@ -22,6 +28,11 @@ DEBUG = os.getenv("DEBUG", "True") == "True"
 ALLOWED_HOSTS = os.getenv(
     "ALLOWED_HOSTS",
     "127.0.0.1,localhost"
+).split(",")
+
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "CSRF_TRUSTED_ORIGINS",
+    "http://127.0.0.1,http://localhost"
 ).split(",")
 
 # =========================
@@ -44,6 +55,7 @@ INSTALLED_APPS = [
 # =========================
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -83,19 +95,37 @@ WSGI_APPLICATION = "verifikasi_ijazah.wsgi.application"
 # =========================
 # DATABASE
 # =========================
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'verifikasi_ijazah',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
+import dj_database_url
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    # Production (Render + Aiven)
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+        )
     }
-}
+    # Aiven MySQL membutuhkan SSL
+    DATABASES['default'].setdefault('OPTIONS', {})
+    DATABASES['default']['OPTIONS']['charset'] = 'utf8mb4'
+    DATABASES['default']['OPTIONS']['ssl'] = {'ssl-mode': 'REQUIRED'}
+else:
+    # Development (lokal)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'verifikasi_ijazah',
+            'USER': 'root',
+            'PASSWORD': '',
+            'HOST': 'localhost',
+            'PORT': '3306',
+            'OPTIONS': {
+                'charset': 'utf8mb4',
+            },
+        }
+    }
 
 # =========================
 # PASSWORD VALIDATION
@@ -119,6 +149,7 @@ USE_TZ = True
 # STATIC FILES
 # =========================
 STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # =========================
 # MEDIA FILES
@@ -134,7 +165,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # =========================
 # UPLOAD LIMIT
 # =========================
-MAX_UPLOAD_SIZE = 10 * 1024 * 1024  
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024
 
 # =========================
 # LOGGING
@@ -183,6 +214,6 @@ STORAGES = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     },
     "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
