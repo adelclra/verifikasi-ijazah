@@ -100,16 +100,12 @@ import dj_database_url
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
-    clean_url = DATABASE_URL.split('?')[0]
+    clean_url = DATABASE_URL.replace('?ssl-mode=REQUIRED', '').replace('&ssl-mode=REQUIRED', '')
     DATABASES = {
-        'default': dj_database_url.config(
-            default=clean_url,
-            conn_max_age=600,
-        )
+        'default': dj_database_url.parse(clean_url, conn_max_age=600)
     }
     DATABASES['default'].setdefault('OPTIONS', {})
     DATABASES['default']['OPTIONS']['charset'] = 'utf8mb4'
-    DATABASES['default']['OPTIONS']['ssl_mode'] = 'REQUIRED'
 else:
     DATABASES = {
         'default': {
