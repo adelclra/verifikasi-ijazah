@@ -4,22 +4,27 @@ import os
 import json
 import numpy as np
 
-from paddleocr import PaddleOCR
-
 from .pdf_utils import pdf_to_images
 from .qwen_api import extract_with_qwen
 
 
 # =========================
-# INIT PADDLE OCR
+# INIT PADDLE OCR 
 # =========================
-ocr = PaddleOCR(
-    use_angle_cls=True,
-    lang='id',
-    det_db_thresh=0.3,
-    det_db_box_thresh=0.5,
-    show_log=False,
-)
+_ocr_instance = None
+
+def get_ocr():
+    global _ocr_instance
+    if _ocr_instance is None:
+        from paddleocr import PaddleOCR
+        _ocr_instance = PaddleOCR(
+            use_angle_cls=True,
+            lang='id',
+            det_db_thresh=0.3,
+            det_db_box_thresh=0.5,
+            show_log=False,
+        )
+    return _ocr_instance
 
 
 # =========================
@@ -206,7 +211,7 @@ def parse_qwen_result(ai_result):
 # =========================
 def paddle_ocr_text(image):
     try:
-        result = ocr.ocr(image, cls=True)
+        result = get_ocr().ocr(image, cls=True)
         full_text = ""
 
         if not result or not result[0]:
@@ -236,7 +241,7 @@ def paddle_ocr_text(image):
 # =========================
 def paddle_ocr_structured(image):
     try:
-        result = ocr.ocr(image, cls=True)
+        result = get_ocr().ocr(image, cls=True)
 
         if not result or not result[0]:
             return ""
