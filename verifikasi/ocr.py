@@ -18,8 +18,6 @@ ocr = PaddleOCR(
     lang='id',
     det_db_thresh=0.3,
     det_db_box_thresh=0.5,
-    rec_algorithm='SVTR_LCNet',
-    use_gpu=False,
     show_log=False,
 )
 
