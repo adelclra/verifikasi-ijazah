@@ -100,19 +100,17 @@ import dj_database_url
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if DATABASE_URL:
-    # Production (Render + Aiven)
+    clean_url = DATABASE_URL.split('?')[0]
     DATABASES = {
         'default': dj_database_url.config(
-            default=DATABASE_URL,
+            default=clean_url,
             conn_max_age=600,
         )
     }
-    # Aiven MySQL membutuhkan SSL
     DATABASES['default'].setdefault('OPTIONS', {})
     DATABASES['default']['OPTIONS']['charset'] = 'utf8mb4'
-    DATABASES['default']['OPTIONS']['ssl'] = {'ssl-mode': 'REQUIRED'}
+    DATABASES['default']['OPTIONS']['ssl_mode'] = 'REQUIRED'
 else:
-    # Development (lokal)
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.mysql',
