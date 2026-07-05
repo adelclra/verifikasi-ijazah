@@ -9,3 +9,7 @@ db.sqlite3
 .env
 
 .vscode/
+
+compare_methods.py
+test_ijazah/
+hasil_perbandingan.txt
