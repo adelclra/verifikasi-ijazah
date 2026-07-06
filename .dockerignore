@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+media/
+test_ijazah/
+compare_methods.py
+hasil_perbandingan.txt
+.env
+*.sqlite3
