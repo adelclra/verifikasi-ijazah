@@ -254,8 +254,7 @@
                   <div>
                     <p class="settings-detail-label">Terakhir Login</p>
                     <p class="settings-detail-value">
-                      {{ request.user.last_login|date:"d M Y,
-                      H:i"|default:"Belum pernah" }}
+                      {{ request.user.last_login|date:"d M Y, H:i"|default:"Belum pernah" }}
                     </p>
                   </div>
                 </div>
